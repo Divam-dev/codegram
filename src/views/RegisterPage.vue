@@ -2,33 +2,54 @@
   <div class="register-page">
     <BaseHeader />
     <div class="register-container">
-      <form class="register-form">
+      <form class="register-form" @submit.prevent="Register">
         <h1 class="form-title">Зареєструватися</h1>
+
+        <button type="button" class="google-button" @click="signInWithGoogle">
+          <img src="@/assets/svg/google.svg" alt="Google icon" />
+          Увійти через Google
+        </button>
+
+        <div class="separator">
+          <span>або</span>
+        </div>
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input type="text" id="name" placeholder="Введіть логін" required />
+            <input v-model="name" type="text" id="name" placeholder="Введіть логін" required />
             <img class="icon" src="@/assets/svg/userProfile.svg" alt="User icon" />
           </div>
         </div>
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input type="email" id="email" placeholder="Введіть вашу електронну пошту" required />
+            <input
+              v-model="email"
+              type="email"
+              id="email"
+              placeholder="Введіть вашу електронну пошту"
+              required
+            />
             <img class="icon" src="@/assets/svg/email.svg" alt="Email icon" />
           </div>
         </div>
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input type="password" id="password" placeholder="Введіть пароль" required />
+            <input
+              v-model="password"
+              type="password"
+              id="password"
+              placeholder="Введіть пароль"
+              required
+            />
             <img class="icon" src="@/assets/svg/lock.svg" alt="Lock icon" />
           </div>
         </div>
 
         <div class="options">
           <label>
-            <input type="checkbox" />
+            <input v-model="termsAgreed" type="checkbox" />
             Погоджуюся з <router-link to="/rules">правилами</router-link>
           </label>
         </div>
@@ -47,6 +68,13 @@
 <script>
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
+import { useAuthStore } from '../stores/auth'
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from 'firebase/auth'
 
 export default {
   name: 'RegisterPage',
@@ -59,11 +87,43 @@ export default {
       name: '',
       email: '',
       password: '',
+      termsAgreed: false,
     }
   },
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
   methods: {
-    handleRegister() {
-      // TODO: Implement registration logic
+    async Register(e) {
+      e.preventDefault()
+
+      if (!this.termsAgreed) {
+        alert('Будь ласка, погодьтеся з правилами')
+        return
+      }
+
+      try {
+        const auth = getAuth()
+        const userCredential = await createUserWithEmailAndPassword(auth, this.email, this.password)
+
+        this.authStore.setUser(userCredential.user)
+        this.$router.push('/profile')
+      } catch (error) {
+        alert(`Помилка реєстрації: ${error.message}`)
+      }
+    },
+    async signInWithGoogle() {
+      try {
+        const auth = getAuth()
+        const provider = new GoogleAuthProvider()
+        const userCredential = await signInWithPopup(auth, provider)
+
+        this.authStore.setUser(userCredential.user)
+        this.$router.push('/profile')
+      } catch (error) {
+        alert(`Помилка входу через Google: ${error.message}`)
+      }
     },
   },
 }
@@ -96,6 +156,53 @@ export default {
   font-weight: bold;
   margin-bottom: 20px;
   text-align: center;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  background-color: white;
+  cursor: pointer;
+  transition:
+    border-color 0.3s,
+    background-color 0.3s;
+}
+
+.google-button:hover {
+  border: 1px solid black;
+}
+
+.google-button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.separator::before,
+.separator::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.separator span {
+  padding: 0 10px;
+  color: #666;
+  font-size: 14px;
 }
 
 .form-group {

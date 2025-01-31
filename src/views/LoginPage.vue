@@ -2,29 +2,50 @@
   <div class="login-page">
     <BaseHeader />
     <div class="login-container">
-      <form class="login-form">
+      <form class="login-form" @submit.prevent="Login">
         <h1 class="form-title">Увійти</h1>
+
+        <button type="button" class="google-button" @click="signInWithGoogle">
+          <img src="@/assets/svg/google.svg" alt="Google icon" />
+          Увійти через Google
+        </button>
+
+        <div class="separator">
+          <span>або</span>
+        </div>
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input type="email" id="email" placeholder="Введіть вашу електронну пошту" required />
+            <input
+              v-model="email"
+              type="email"
+              id="email"
+              placeholder="Введіть вашу електронну пошту"
+              required
+            />
             <img class="icon" src="@/assets/svg/email.svg" alt="Email icon" />
           </div>
         </div>
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input type="password" id="password" placeholder="Введіть пароль" required />
+            <input
+              v-model="password"
+              type="password"
+              id="password"
+              placeholder="Введіть пароль"
+              required
+            />
             <img class="icon" src="@/assets/svg/lock.svg" alt="Lock icon" />
           </div>
         </div>
 
         <div class="options">
           <label>
-            <input type="checkbox" />
+            <input v-model="rememberMe" type="checkbox" />
             Запам'ятати мене
           </label>
-          <a href="#">Забули пароль?</a>
+          <router-link to="/reset-password">Забули пароль?</router-link>
         </div>
 
         <button type="submit" class="login-button">Увійти</button>
@@ -41,6 +62,16 @@
 <script>
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
+import { useAuthStore } from '../stores/auth'
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
+  GoogleAuthProvider,
+  signInWithPopup,
+} from 'firebase/auth'
 
 export default {
   name: 'LoginPage',
@@ -52,11 +83,55 @@ export default {
     return {
       email: '',
       password: '',
+      rememberMe: false,
     }
   },
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
   methods: {
-    handleLogin() {
-      // TODO: Implement login logic
+    async Login() {
+      try {
+        const auth = getAuth()
+        const persistence = this.rememberMe ? browserLocalPersistence : browserSessionPersistence
+        await setPersistence(auth, persistence)
+
+        const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password)
+        this.authStore.setUser(userCredential.user)
+
+        this.$router.push('/profile')
+      } catch (error) {
+        let errorMessage = 'Сталася помилка при вході. Спробуйте ще раз.'
+
+        switch (error.code) {
+          case 'auth/invalid-email':
+            errorMessage = 'Невірний формат електронної пошти'
+            break
+          case 'auth/user-not-found':
+            errorMessage = 'Користувача з такою електронною поштою не знайдено'
+            break
+          case 'auth/wrong-password':
+            errorMessage = 'Невірний пароль'
+            break
+          case 'auth/too-many-requests':
+            errorMessage = 'Забагато спроб входу. Спробуйте пізніше'
+            break
+        }
+        alert(errorMessage)
+      }
+    },
+    async signInWithGoogle() {
+      try {
+        const auth = getAuth()
+        const provider = new GoogleAuthProvider()
+        const userCredential = await signInWithPopup(auth, provider)
+
+        this.authStore.setUser(userCredential.user)
+        this.$router.push('/profile')
+      } catch (error) {
+        alert(`Помилка входу через Google: ${error.message}`)
+      }
     },
   },
 }
@@ -89,6 +164,53 @@ export default {
   font-weight: bold;
   margin-bottom: 20px;
   text-align: center;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  background-color: white;
+  cursor: pointer;
+  transition:
+    border-color 0.3s,
+    background-color 0.3s;
+}
+
+.google-button:hover {
+  border: 1px solid black;
+}
+
+.google-button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.separator::before,
+.separator::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.separator span {
+  padding: 0 10px;
+  color: #666;
+  font-size: 14px;
 }
 
 .form-group {

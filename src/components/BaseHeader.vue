@@ -8,9 +8,28 @@
         <router-link to="/about">Про проект</router-link>
         <router-link to="/faq">Поширені питання</router-link>
       </div>
-      <div class="auth-buttons">
+      <div v-if="!authStore.isAuthenticated" class="auth-buttons">
         <button class="btn-login" @click="goToLogin">Увійти</button>
         <button class="btn-signup" @click="goToRegister">Приєднатися</button>
+      </div>
+      <div v-else class="user-menu">
+        <div
+          class="profile-wrapper"
+          @mouseenter="isProfileMenuOpen = true"
+          @mouseleave="isProfileMenuOpen = false"
+        >
+          <img src="@/assets/svg/profile-avatar.svg" alt="User Avatar" class="avatar" />
+          <span class="profile-link">Профіль</span>
+
+          <transition name="fade">
+            <div v-if="isProfileMenuOpen" class="profile-menu">
+              <router-link to="/profile" class="menu-item">Профіль</router-link>
+              <router-link to="/my-courses" class="menu-item">Мої курси</router-link>
+              <router-link to="/create-course" class="menu-item">Створити курс</router-link>
+              <button @click="logout" class="menu-item logout">Вийти</button>
+            </div>
+          </transition>
+        </div>
       </div>
       <button class="mobile-menu-btn" @click="toggleMobileMenu">
         <span></span>
@@ -30,11 +49,19 @@
 </template>
 
 <script>
+import { useAuthStore } from '../stores/auth'
+import { getAuth, signOut } from 'firebase/auth'
+
 export default {
   name: 'BaseHeader',
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
   data() {
     return {
       isMobileMenuOpen: false,
+      isProfileMenuOpen: false,
     }
   },
   methods: {
@@ -47,6 +74,20 @@ export default {
     goToRegister() {
       this.$router.push('/register')
     },
+    async logout() {
+      try {
+        const auth = getAuth()
+        await signOut(auth)
+        this.authStore.clearUser()
+        this.$router.push('/')
+      } catch (error) {
+        console.error('Помилка виходу:', error)
+      }
+    },
+  },
+  async mounted() {
+    await this.authStore.initPromise
+    this.authStore.init()
   },
 }
 </script>
@@ -130,6 +171,112 @@ export default {
 
 .mobile-menu {
   display: none;
+}
+
+.user-menu {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profile-link {
+  text-decoration: none;
+  color: #333;
+}
+
+.profile-link:hover {
+  color: #3b82f6;
+}
+
+.avatar {
+  width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+}
+
+.profile-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 200px;
+  padding: 0.5rem 0;
+  z-index: 1001;
+  margin-top: 0.5rem;
+}
+
+.menu-item {
+  display: block;
+  padding: 0.75rem 1.5rem;
+  color: #333;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.menu-item:hover {
+  color: #3b82f6;
+}
+
+.logout {
+  color: #ef4444;
+  border-top: 1px solid #eee;
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+  transform-origin: top right;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* Адаптація для мобільних */
+@media (max-width: 768px) {
+  .header-links,
+  .auth-buttons,
+  .user-menu {
+    display: none;
+  }
+
+  .profile-menu {
+    position: static;
+    box-shadow: none;
+    background: transparent;
+    margin-top: 0;
+  }
+
+  .menu-item {
+    padding: 0.5rem 1rem;
+  }
+
+  .logout {
+    border-top: none;
+    margin-top: 0;
+  }
 }
 
 @media (max-width: 768px) {
