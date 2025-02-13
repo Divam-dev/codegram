@@ -69,12 +69,7 @@
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
 import { useAuthStore } from '../stores/auth'
-import {
-  getAuth,
-  createUserWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup,
-} from 'firebase/auth'
+import { AuthHelper } from '../services/auth.service'
 
 export default {
   name: 'RegisterPage',
@@ -88,6 +83,7 @@ export default {
       email: '',
       password: '',
       termsAgreed: false,
+      authHelper: new AuthHelper(),
     }
   },
   setup() {
@@ -104,22 +100,18 @@ export default {
       }
 
       try {
-        const auth = getAuth()
-        const userCredential = await createUserWithEmailAndPassword(auth, this.email, this.password)
-
-        this.authStore.setUser(userCredential.user)
+        const user = await this.authHelper.registerWithEmail(this.email, this.password, this.name)
+        this.authStore.setUser(user)
         this.$router.push('/profile')
       } catch (error) {
         alert(`Помилка реєстрації: ${error.message}`)
       }
     },
+
     async signInWithGoogle() {
       try {
-        const auth = getAuth()
-        const provider = new GoogleAuthProvider()
-        const userCredential = await signInWithPopup(auth, provider)
-
-        this.authStore.setUser(userCredential.user)
+        const user = await this.authHelper.signInWithGoogle()
+        this.authStore.setUser(user)
         this.$router.push('/profile')
       } catch (error) {
         alert(`Помилка входу через Google: ${error.message}`)

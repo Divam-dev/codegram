@@ -63,14 +63,13 @@
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
 import { useAuthStore } from '../stores/auth'
+import { AuthHelper } from '../services/auth.service'
 import {
   getAuth,
   signInWithEmailAndPassword,
   setPersistence,
   browserLocalPersistence,
   browserSessionPersistence,
-  GoogleAuthProvider,
-  signInWithPopup,
 } from 'firebase/auth'
 
 export default {
@@ -84,6 +83,7 @@ export default {
       email: '',
       password: '',
       rememberMe: false,
+      authHelper: new AuthHelper(),
     }
   },
   setup() {
@@ -97,9 +97,15 @@ export default {
         const persistence = this.rememberMe ? browserLocalPersistence : browserSessionPersistence
         await setPersistence(auth, persistence)
 
+        const { exists, authType } = await this.authHelper.checkEmailExists(this.email)
+
+        if (exists && authType !== 'email') {
+          alert('Цей email зареєстрований через інший метод автентифікації')
+          return
+        }
+
         const userCredential = await signInWithEmailAndPassword(auth, this.email, this.password)
         this.authStore.setUser(userCredential.user)
-
         this.$router.push('/profile')
       } catch (error) {
         let errorMessage = 'Сталася помилка при вході. Спробуйте ще раз.'
@@ -121,13 +127,11 @@ export default {
         alert(errorMessage)
       }
     },
+
     async signInWithGoogle() {
       try {
-        const auth = getAuth()
-        const provider = new GoogleAuthProvider()
-        const userCredential = await signInWithPopup(auth, provider)
-
-        this.authStore.setUser(userCredential.user)
+        const user = await this.authHelper.signInWithGoogle()
+        this.authStore.setUser(user)
         this.$router.push('/profile')
       } catch (error) {
         alert(`Помилка входу через Google: ${error.message}`)
