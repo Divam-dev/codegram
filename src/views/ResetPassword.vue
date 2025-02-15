@@ -5,14 +5,6 @@
       <form class="reset-form" @submit.prevent="resetPassword">
         <h1 class="form-title">Відновлення паролю</h1>
 
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-
-        <div v-if="successMessage" class="success-message">
-          {{ successMessage }}
-        </div>
-
         <p class="form-description">
           Введіть адресу електронної пошти, і ми надішлемо вам інструкції з відновлення паролю
         </p>
@@ -46,6 +38,7 @@
 <script>
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
+import { getAuth, sendPasswordResetEmail } from 'firebase/auth'
 import { AuthHelper } from '../services/auth.service'
 
 export default {
@@ -58,40 +51,52 @@ export default {
     return {
       email: '',
       isLoading: false,
-      errorMessage: '',
-      successMessage: '',
       authHelper: new AuthHelper(),
     }
   },
   methods: {
     async resetPassword() {
       if (!this.email) {
-        this.errorMessage = 'Будь ласка, введіть email'
+        alert('Будь ласка, введіть email')
         return
       }
 
       this.isLoading = true
-      this.errorMessage = ''
-      this.successMessage = ''
 
       try {
-        await this.authHelper.sendPasswordReset(this.email)
+        const { exists, authType } = await this.authHelper.checkEmailExists(this.email)
 
-        this.successMessage = 'Інструкції з відновлення паролю надіслані на вашу електронну пошту'
-        setTimeout(() => {
-          this.$router.push('/login')
-        }, 3000)
+        if (!exists) {
+          throw new Error('Користувача з такою електронною поштою не знайдено')
+        }
+
+        if (authType !== 'email') {
+          throw new Error('Цей email зареєстрований через Google. Використовуйте Google для входу.')
+        }
+
+        const auth = getAuth()
+        await sendPasswordResetEmail(auth, this.email)
+
+        alert('Інструкції з відновлення паролю надіслані на вашу електронну пошту')
+        this.$router.push('/login')
       } catch (error) {
+        let errorMessage = 'Сталася помилка при відновленні паролю'
+
         switch (error.code) {
           case 'auth/invalid-email':
-            this.errorMessage = 'Невірний формат електронної пошти'
+            errorMessage = 'Невірний формат електронної пошти'
             break
           case 'auth/user-not-found':
-            this.errorMessage = 'Користувача з такою електронною поштою не знайдено'
+            errorMessage = 'Користувача з такою електронною поштою не знайдено'
+            break
+          case 'auth/too-many-requests':
+            errorMessage = 'Забагато спроб. Спробуйте пізніше'
             break
           default:
-            this.errorMessage = error.message
+            errorMessage = error.message
         }
+
+        alert(errorMessage)
       } finally {
         this.isLoading = false
       }
@@ -106,28 +111,6 @@ export default {
   display: flex;
   flex-direction: column;
   background-color: #bbd3fc;
-}
-
-.error-message {
-  color: #dc2626;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-size: 0.875rem;
-}
-
-.success-message {
-  color: #059669;
-  background-color: #d1fae5;
-  border: 1px solid #a7f3d0;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-size: 0.875rem;
 }
 
 .reset-container {

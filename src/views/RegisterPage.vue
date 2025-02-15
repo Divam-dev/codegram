@@ -5,10 +5,6 @@
       <form class="register-form" @submit.prevent="Register">
         <h1 class="form-title">Зареєструватися</h1>
 
-        <div v-if="errorMessage" class="error-message">
-          {{ errorMessage }}
-        </div>
-
         <button type="button" class="google-button" @click="signInWithGoogle">
           <img src="@/assets/svg/google.svg" alt="Google icon" />
           Увійти через Google
@@ -87,7 +83,6 @@ export default {
       email: '',
       password: '',
       termsAgreed: false,
-      errorMessage: '',
       authHelper: new AuthHelper(),
     }
   },
@@ -98,10 +93,9 @@ export default {
   methods: {
     async Register(e) {
       e.preventDefault()
-      this.errorMessage = ''
 
       if (!this.termsAgreed) {
-        this.errorMessage = 'Будь ласка, погодьтеся з правилами'
+        alert('Будь ласка, погодьтеся з правилами')
         return
       }
 
@@ -110,30 +104,17 @@ export default {
         this.authStore.setUser(user)
         this.$router.push('/profile')
       } catch (error) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            this.errorMessage = 'Ця електронна пошта вже використовується'
-            break
-          case 'auth/invalid-email':
-            this.errorMessage = 'Невірний формат електронної пошти'
-            break
-          case 'auth/weak-password':
-            this.errorMessage = 'Пароль занадто слабкий'
-            break
-          default:
-            this.errorMessage = 'Помилка реєстрації. Спробуйте ще раз.'
-        }
+        alert(`Помилка реєстрації: ${error.message}`)
       }
     },
 
     async signInWithGoogle() {
       try {
-        this.errorMessage = ''
         const user = await this.authHelper.signInWithGoogle()
         this.authStore.setUser(user)
         this.$router.push('/profile')
       } catch (error) {
-        this.errorMessage = `Помилка входу через Google: ${error.message}`
+        alert(`Помилка входу через Google: ${error.message}`)
       }
     },
   },
@@ -146,17 +127,6 @@ export default {
   display: flex;
   flex-direction: column;
   background-color: #bbd3fc;
-}
-
-.error-message {
-  color: #dc2626;
-  background-color: #fee2e2;
-  border: 1px solid #fecaca;
-  border-radius: 0.375rem;
-  padding: 0.75rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  font-size: 0.875rem;
 }
 
 .register-container {

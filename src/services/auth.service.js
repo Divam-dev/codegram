@@ -1,20 +1,9 @@
-import {
-  getFirestore,
-  collection,
-  query,
-  where,
-  getDocs,
-  setDoc,
-  doc,
-  updateDoc,
-  getDoc,
-} from 'firebase/firestore'
+import { getFirestore, collection, query, where, getDocs, setDoc, doc } from 'firebase/firestore'
 import {
   getAuth,
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  sendPasswordResetEmail,
 } from 'firebase/auth'
 
 export class AuthHelper {
@@ -23,7 +12,6 @@ export class AuthHelper {
     this.auth = getAuth()
   }
 
-  // Check if an email exists in the database
   async checkEmailExists(email) {
     if (!email) {
       return { exists: false, authType: null }
@@ -52,45 +40,6 @@ export class AuthHelper {
     }
   }
 
-  // Check if the user has made too many password resets in the last 30 minutes
-  async checkResetAttempts(email) {
-    const resetAttemptsRef = doc(this.db, 'resetAttempts', email.toLowerCase())
-    const resetDoc = await getDoc(resetAttemptsRef)
-
-    if (resetDoc.exists()) {
-      const data = resetDoc.data()
-      const lastAttempt = data.lastAttempt?.toDate() || new Date(0)
-      const attempts = data.attempts || 0
-
-      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000)
-      if (lastAttempt < thirtyMinutesAgo) {
-        await setDoc(resetAttemptsRef, {
-          attempts: 1,
-          lastAttempt: new Date(),
-        })
-        return true
-      }
-
-      if (attempts >= 3) {
-        const timeLeft = 30 - Math.floor((Date.now() - lastAttempt.getTime()) / 60000)
-        throw new Error(`Забагато спроб. Спробуйте через ${timeLeft} хвилин`)
-      }
-
-      await updateDoc(resetAttemptsRef, {
-        attempts: attempts + 1,
-        lastAttempt: new Date(),
-      })
-
-      return true
-    }
-
-    await setDoc(resetAttemptsRef, {
-      attempts: 1,
-      lastAttempt: new Date(),
-    })
-    return true
-  }
-
   getUserEmail(user) {
     if (user.email) {
       return user.email
@@ -106,7 +55,6 @@ export class AuthHelper {
     throw new Error('Не вдалося отримати email користувача')
   }
 
-  // Create a new user record in the database
   async createUserRecord(user, username, authType) {
     try {
       const email = this.getUserEmail(user)
@@ -139,7 +87,6 @@ export class AuthHelper {
     }
   }
 
-  // Register a new user with email and password
   async registerWithEmail(email, password, username) {
     try {
       const { exists, authType } = await this.checkEmailExists(email)
@@ -177,7 +124,6 @@ export class AuthHelper {
     }
   }
 
-  // Sign in with Google
   async signInWithGoogle() {
     let temporaryUser = null
 
@@ -217,24 +163,5 @@ export class AuthHelper {
 
       throw error
     }
-  }
-
-  // Send password reset email
-  async sendPasswordReset(email) {
-    const { exists, authType } = await this.checkEmailExists(email)
-
-    if (!exists) {
-      throw new Error('Користувача з такою електронною поштою не знайдено')
-    }
-
-    if (authType !== 'email') {
-      throw new Error('Цей email зареєстрований через Google. Використовуйте Google для входу.')
-    }
-
-    await this.checkResetAttempts(email)
-
-    await sendPasswordResetEmail(this.auth, email)
-
-    return true
   }
 }
