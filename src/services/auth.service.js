@@ -4,6 +4,11 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  sendPasswordResetEmail,
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence,
+  browserSessionPersistence,
 } from 'firebase/auth'
 
 export class AuthHelper {
@@ -12,6 +17,7 @@ export class AuthHelper {
     this.auth = getAuth()
   }
 
+  // Check if an email exists in the database
   async checkEmailExists(email) {
     if (!email) {
       return { exists: false, authType: null }
@@ -55,6 +61,7 @@ export class AuthHelper {
     throw new Error('Не вдалося отримати email користувача')
   }
 
+  // Create a new user record in the database
   async createUserRecord(user, username, authType) {
     try {
       const email = this.getUserEmail(user)
@@ -87,6 +94,7 @@ export class AuthHelper {
     }
   }
 
+  // Register a new user with email and password
   async registerWithEmail(email, password, username) {
     try {
       const { exists, authType } = await this.checkEmailExists(email)
@@ -116,6 +124,10 @@ export class AuthHelper {
         throw new Error('Пароль занадто слабкий')
       }
 
+      if (error.code?.startsWith('auth/')) {
+        throw new Error(`Помилка реєстрації: ${error.message}`)
+      }
+
       if (error.message) {
         throw error
       }
@@ -124,6 +136,52 @@ export class AuthHelper {
     }
   }
 
+  // Sign in with email and password
+  async signInWithEmail(email, password, rememberMe = false) {
+    try {
+      const { exists, authType } = await this.checkEmailExists(email)
+
+      if (exists && authType !== 'email') {
+        throw new Error('Цей email зареєстрований через інший метод автентифікації')
+      }
+
+      const persistence = rememberMe ? browserLocalPersistence : browserSessionPersistence
+      await setPersistence(this.auth, persistence)
+
+      const userCredential = await signInWithEmailAndPassword(this.auth, email, password)
+      return userCredential.user
+    } catch (error) {
+      console.error('Login error:', error)
+
+      if (error.code === 'auth/invalid-email') {
+        throw new Error('Невірний формат електронної пошти')
+      }
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('Користувача з такою електронною поштою не знайдено')
+      }
+      if (error.code === 'auth/wrong-password') {
+        throw new Error('Невірний пароль')
+      }
+      if (error.code === 'auth/too-many-requests') {
+        throw new Error('Забагато спроб входу. Спробуйте пізніше')
+      }
+      if (error.code === 'auth/invalid-credential') {
+        throw new Error('Невірні облікові дані. Перевірте email та пароль')
+      }
+
+      if (error.code?.startsWith('auth/')) {
+        throw new Error(`Помилка входу: ${error.message}`)
+      }
+
+      if (error.message) {
+        throw error
+      }
+
+      throw new Error('Помилка при вході. Спробуйте ще раз.')
+    }
+  }
+
+  // Sign in with Google
   async signInWithGoogle() {
     let temporaryUser = null
 
@@ -162,6 +220,44 @@ export class AuthHelper {
       }
 
       throw error
+    }
+  }
+
+  // Send password reset email
+  async sendPasswordReset(email) {
+    try {
+      const { exists, authType } = await this.checkEmailExists(email)
+
+      if (!exists) {
+        throw new Error('Користувача з такою електронною поштою не знайдено')
+      }
+
+      if (authType !== 'email') {
+        throw new Error('Цей email зареєстрований через Google. Використовуйте Google для входу.')
+      }
+
+      await sendPasswordResetEmail(this.auth, email)
+
+      return true
+    } catch (error) {
+      console.error('Password reset error:', error)
+
+      if (error.code === 'auth/invalid-email') {
+        throw new Error('Невірний формат електронної пошти')
+      }
+      if (error.code === 'auth/user-not-found') {
+        throw new Error('Користувача з такою електронною поштою не знайдено')
+      }
+
+      if (error.code?.startsWith('auth/')) {
+        throw new Error(`Помилка відновлення паролю: ${error.message}`)
+      }
+
+      if (error.message) {
+        throw error
+      }
+
+      throw new Error('Помилка при відновленні паролю. Спробуйте ще раз.')
     }
   }
 }
