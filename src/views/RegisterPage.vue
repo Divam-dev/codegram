@@ -20,7 +20,15 @@
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input v-model="name" type="text" id="name" placeholder="Введіть логін" required />
+            <input
+              v-model="name"
+              type="text"
+              id="name"
+              placeholder="Введіть логін"
+              minlength="3"
+              maxlength="20"
+              required
+            />
             <img class="icon" src="@/assets/svg/userProfile.svg" alt="User icon" />
           </div>
         </div>

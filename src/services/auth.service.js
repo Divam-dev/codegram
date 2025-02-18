@@ -46,6 +46,28 @@ export class AuthHelper {
     }
   }
 
+  // Check if a username exists in the database
+  async checkUsernameExists(username) {
+    if (!username) {
+      return false
+    }
+
+    try {
+      const usersRef = collection(this.db, 'users')
+      const querySnapshot = await getDocs(usersRef)
+
+      const usernameExists = querySnapshot.docs.some((doc) => {
+        const userData = doc.data()
+        return userData.username && userData.username.toLowerCase() === username.toLowerCase()
+      })
+
+      return usernameExists
+    } catch (error) {
+      console.error('Error checking username:', error)
+      throw new Error(`Помилка перевірки логіна: ${error.message}`)
+    }
+  }
+
   getUserEmail(user) {
     if (user.email) {
       return user.email
@@ -104,6 +126,13 @@ export class AuthHelper {
           throw new Error('Користувач з такою електронною поштою вже існує')
         }
         throw new Error('Ця електронна пошта вже використовується через інший метод автентифікації')
+      }
+
+      if (username) {
+        const usernameExists = await this.checkUsernameExists(username)
+        if (usernameExists) {
+          throw new Error('Цей логін вже використовується іншим користувачем')
+        }
       }
 
       const userCredential = await createUserWithEmailAndPassword(this.auth, email, password)
