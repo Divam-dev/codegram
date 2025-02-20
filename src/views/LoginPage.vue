@@ -2,29 +2,54 @@
   <div class="login-page">
     <BaseHeader />
     <div class="login-container">
-      <form class="login-form">
+      <form class="login-form" @submit.prevent="Login">
         <h1 class="form-title">Увійти</h1>
+
+        <div v-if="errorMessage" class="error-message">
+          {{ errorMessage }}
+        </div>
+
+        <button type="button" class="google-button" @click="signInWithGoogle">
+          <img src="@/assets/svg/google.svg" alt="Google icon" />
+          Увійти через Google
+        </button>
+
+        <div class="separator">
+          <span>або</span>
+        </div>
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input type="email" id="email" placeholder="Введіть вашу електронну пошту" required />
+            <input
+              v-model="email"
+              type="email"
+              id="email"
+              placeholder="Введіть вашу електронну пошту"
+              required
+            />
             <img class="icon" src="@/assets/svg/email.svg" alt="Email icon" />
           </div>
         </div>
 
         <div class="form-group">
           <div class="input-wrapper">
-            <input type="password" id="password" placeholder="Введіть пароль" required />
+            <input
+              v-model="password"
+              type="password"
+              id="password"
+              placeholder="Введіть пароль"
+              required
+            />
             <img class="icon" src="@/assets/svg/lock.svg" alt="Lock icon" />
           </div>
         </div>
 
         <div class="options">
           <label>
-            <input type="checkbox" />
+            <input v-model="rememberMe" type="checkbox" />
             Запам'ятати мене
           </label>
-          <a href="#">Забули пароль?</a>
+          <router-link to="/reset-password">Забули пароль?</router-link>
         </div>
 
         <button type="submit" class="login-button">Увійти</button>
@@ -41,6 +66,8 @@
 <script>
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
+import { useAuthStore } from '../stores/auth'
+import { AuthHelper } from '../services/auth.service'
 
 export default {
   name: 'LoginPage',
@@ -52,11 +79,42 @@ export default {
     return {
       email: '',
       password: '',
+      rememberMe: false,
+      authHelper: new AuthHelper(),
+      errorMessage: '',
     }
   },
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
   methods: {
-    handleLogin() {
-      // TODO: Implement login logic
+    async Login() {
+      try {
+        this.errorMessage = ''
+
+        const user = await this.authHelper.signInWithEmail(
+          this.email,
+          this.password,
+          this.rememberMe,
+        )
+
+        this.authStore.setUser(user)
+        this.$router.push('/profile')
+      } catch (error) {
+        this.errorMessage = error.message
+      }
+    },
+
+    async signInWithGoogle() {
+      try {
+        this.errorMessage = ''
+        const user = await this.authHelper.signInWithGoogle()
+        this.authStore.setUser(user)
+        this.$router.push('/profile')
+      } catch (error) {
+        this.errorMessage = `Помилка входу через Google: ${error.message}`
+      }
     },
   },
 }
@@ -68,6 +126,17 @@ export default {
   display: flex;
   flex-direction: column;
   background-color: #bbd3fc;
+}
+
+.error-message {
+  color: #dc2626;
+  background-color: #fee2e2;
+  border: 1px solid #fecaca;
+  border-radius: 0.375rem;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  text-align: center;
+  font-size: 0.875rem;
 }
 
 .login-container {
@@ -89,6 +158,53 @@ export default {
   font-weight: bold;
   margin-bottom: 20px;
   text-align: center;
+}
+
+.google-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 20px;
+  font-size: 16px;
+  font-weight: bold;
+  border: 1px solid #e0e0e0;
+  border-radius: 25px;
+  background-color: white;
+  cursor: pointer;
+  transition:
+    border-color 0.3s,
+    background-color 0.3s;
+}
+
+.google-button:hover {
+  border: 1px solid black;
+}
+
+.google-button img {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+}
+
+.separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
+
+.separator::before,
+.separator::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.separator span {
+  padding: 0 10px;
+  color: #666;
+  font-size: 14px;
 }
 
 .form-group {

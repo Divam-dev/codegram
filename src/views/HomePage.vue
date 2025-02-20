@@ -9,7 +9,9 @@
           програмування, дизайн, управління проектами та багато іншого разом із найкращими
           експертами.
         </p>
-        <button class="join-btn">Приєднатися</button>
+        <button v-if="!authStore.isAuthenticated" class="join-btn" @click="goToRegister">
+          Приєднатися
+        </button>
       </div>
       <div class="hero-image">
         <img src="@/assets/images/learning-illustration.png" alt="Learning illustration" />
@@ -51,12 +53,22 @@
 <script>
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
+import { useAuthStore } from '../stores/auth'
 
 export default {
   name: 'HomePage',
   components: {
     BaseHeader,
     BaseFooter,
+  },
+  setup() {
+    const authStore = useAuthStore()
+    return { authStore }
+  },
+  methods: {
+    goToRegister() {
+      this.$router.push('/register')
+    },
   },
 }
 </script>
