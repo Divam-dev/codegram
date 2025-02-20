@@ -127,6 +127,13 @@ export default {
         this.errorMessage = ''
         const user = await this.authHelper.signInWithGoogle()
         this.authStore.setUser(user)
+        if (
+          !this.authStore.profile ||
+          (user.photoURL && !this.authStore.profile?.profile?.avatarUrl)
+        ) {
+          await this.authStore.refreshProfile()
+        }
+
         this.$router.push('/profile')
       } catch (error) {
         this.errorMessage = `Помилка входу через Google: ${error.message}`

@@ -4,9 +4,12 @@
     <div class="cabinet-container">
       <div class="profile-section">
         <div class="profile-header">
-          <img src="@/assets/svg/profile-avatar.svg" alt="User Avatar" class="avatar" />
-          <h2>{{ userName }}</h2>
-          <p>{{ userEmail }}</p>
+          <img :src="displayAvatar" :alt="authStore.userName" class="avatar" />
+          <h2>{{ authStore.userName }}</h2>
+          <p>{{ authStore.userEmail }}</p>
+          <p v-if="authStore.profile?.profile?.bio" class="user-bio">
+            {{ authStore.profile.profile.bio }}
+          </p>
         </div>
 
         <div class="my-courses">
@@ -31,7 +34,9 @@
 import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
 import CourseCard from '../components/CourseCard.vue'
+import { useAuthStore } from '../stores/auth'
 import { getAuth, signOut } from 'firebase/auth'
+import profileAvatarSvg from '@/assets/svg/profile-avatar.svg'
 
 export default {
   name: 'UserCabinetPage',
@@ -42,28 +47,31 @@ export default {
   },
   data() {
     return {
-      user: null,
-      defaultAvatar: 'https://i.ibb.co/tXGTqW5/Icon2-0.jpg',
       myCourses: [],
-      unsubscribeAuth: null,
+      defaultAvatar: profileAvatarSvg,
     }
+  },
+  computed: {
+    authStore() {
+      return useAuthStore()
+    },
+    displayAvatar() {
+      return this.authStore.userAvatar || this.defaultAvatar
+    },
   },
   methods: {
     async logout() {
       try {
         const auth = getAuth()
         await signOut(auth)
-
-        // Clear any local user data
-        this.user = null
-        this.myCourses = []
-
-        // Redirect to home page
         this.$router.push('/')
       } catch (error) {
         console.error('Помилка при виході:', error)
         alert('Сталася помилка при виході. Спробуйте ще раз.')
       }
+    },
+    editProfile() {
+      this.$router.push('/edit-profile')
     },
   },
 }
