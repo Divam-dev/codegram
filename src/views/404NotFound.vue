@@ -1,6 +1,6 @@
 <template>
+  <BaseHeader />
   <div class="not-found-page">
-    <BaseHeader />
     <div class="not-found-container">
       <div class="not-found-content">
         <h1 class="error-code">404</h1>

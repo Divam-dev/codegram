@@ -115,7 +115,6 @@
         </form>
       </div>
     </div>
-
     <BaseFooter />
   </div>
 </template>

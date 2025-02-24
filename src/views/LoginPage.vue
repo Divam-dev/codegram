@@ -1,6 +1,6 @@
 <template>
+  <BaseHeader />
   <div class="login-page">
-    <BaseHeader />
     <div class="login-container">
       <form class="login-form" @submit.prevent="Login">
         <h1 class="form-title">Увійти</h1>
