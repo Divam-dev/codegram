@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', {
 
   getters: {
     userProfile: (state) => state.profile,
-    userName: (state) => state.profile?.username || state.user?.displayName || 'Користувач',
+    userName: (state) => state.profile?.username || state.user?.displayName || 'User',
     userEmail: (state) => state.profile?.email || state.user?.email || '',
     userAvatar: (state) => state.profile?.profile?.avatarUrl || state.user?.photoURL || '',
   },
