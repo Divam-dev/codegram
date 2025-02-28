@@ -18,8 +18,8 @@
           @mouseenter="isProfileMenuOpen = true"
           @mouseleave="isProfileMenuOpen = false"
         >
-          <img :src="displayAvatar" :alt="authStore.userName" class="avatar" />
-          <span class="profile-link">{{ authStore.userName }}</span>
+          <img :src="displayAvatar" :alt="profileStore.userName" class="avatar" />
+          <span class="profile-link">{{ profileStore.userName }}</span>
 
           <transition name="fade">
             <div v-if="isProfileMenuOpen" class="profile-menu">
@@ -50,6 +50,7 @@
 
 <script>
 import { useAuthStore } from '../stores/auth'
+import { useProfileStore } from '../stores/profile'
 import { getAuth, signOut } from 'firebase/auth'
 import profileAvatarSvg from '@/assets/svg/profile-avatar.svg'
 
@@ -66,8 +67,11 @@ export default {
     authStore() {
       return useAuthStore()
     },
+    profileStore() {
+      return useProfileStore()
+    },
     displayAvatar() {
-      return this.authStore.userAvatar || this.defaultAvatar
+      return this.profileStore.userAvatar || this.defaultAvatar
     },
   },
   methods: {

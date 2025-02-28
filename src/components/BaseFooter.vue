@@ -42,7 +42,7 @@ export default {
 .footer {
   background: #1a1a1a;
   color: white;
-  padding: 3rem 2rem;
+  padding: 2rem 1rem;
   width: 100%;
 }
 
