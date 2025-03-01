@@ -318,6 +318,7 @@ export default {
 .input-wrapper textarea {
   resize: vertical;
   min-height: 100px;
+  font-family: inherit;
 }
 
 .input-wrapper input::placeholder,

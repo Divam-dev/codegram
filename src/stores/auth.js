@@ -6,11 +6,14 @@ export const useAuthStore = defineStore('auth', {
   state: () => ({
     user: null,
     isAuthenticated: false,
+    isInitialized: false,
     initPromise: null,
   }),
 
   actions: {
     init() {
+      if (this.initPromise) return this.initPromise
+
       const auth = getAuth()
       const profileStore = useProfileStore()
 
@@ -30,9 +33,12 @@ export const useAuthStore = defineStore('auth', {
             profileStore.clearProfile()
           }
 
+          this.isInitialized = true
           resolve()
         })
       })
+
+      return this.initPromise
     },
 
     setUser(user) {
