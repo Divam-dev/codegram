@@ -234,7 +234,6 @@ export class AuthHelper {
       temporaryUser = result.user
 
       const email = this.getUserEmail(result.user)
-      console.log('Retrieved email:', email)
 
       const { exists, authType } = await this.checkEmailExists(email)
 

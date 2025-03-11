@@ -1,6 +1,6 @@
 <template>
-  <BaseHeader />
   <div class="register-page">
+    <BaseHeader />
     <div class="register-container">
       <form class="register-form" @submit.prevent="Register">
         <h1 class="form-title">Зареєструватися</h1>
