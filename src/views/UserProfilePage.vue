@@ -3,44 +3,71 @@
     <BaseHeader />
     <div class="cabinet-container">
       <div class="profile-section">
-        <div class="profile-header">
-          <img :src="displayAvatar" :alt="profileStore.userName" class="avatar" />
+        <div v-if="isLoading" class="loading-container">
+          <p>Завантаження профілю...</p>
+        </div>
+
+        <div v-else-if="error" class="error-container">
+          <h1 class="error-code">ПОМИЛКА</h1>
+          <p class="error-description">{{ error }}</p>
+          <router-link to="/courses" class="home-button"> Повернутися до курсів </router-link>
+        </div>
+
+        <div v-else class="profile-header">
+          <img :src="displayAvatar" :alt="userName" class="avatar" />
           <div class="user-details">
             <div class="detail-item">
               <span class="detail-label">Логін:</span>
-              <p class="detail-value">{{ profileStore.userName }}</p>
+              <p class="detail-value">{{ userName }}</p>
             </div>
-            <div class="detail-item">
+            <div class="detail-item" v-if="isOwnProfile">
               <span class="detail-label">Електронна пошта:</span>
-              <p class="detail-value">{{ profileStore.userEmail }}</p>
+              <p class="detail-value">{{ userEmail }}</p>
             </div>
-            <div class="detail-item">
+            <div class="detail-item" v-if="isOwnProfile">
               <span class="detail-label">Ім'я та прізвище:</span>
-              <p class="detail-value">{{ profileStore.userFullName || 'Не вказано' }}</p>
+              <p class="detail-value">{{ userFullName || 'Не вказано' }}</p>
             </div>
             <div class="detail-item">
               <span class="detail-label">Про мене:</span>
-              <p class="detail-value bio">{{ profileStore.userBio || 'Не вказано' }}</p>
+              <p class="detail-value bio">{{ userBio || 'Не вказано' }}</p>
             </div>
           </div>
-          <div class="edit-profile-container">
+          <div class="edit-profile-container" v-if="isOwnProfile">
             <button @click="showEditModal = true" class="edit-profile-btn">
               Редагувати профіль
             </button>
           </div>
         </div>
 
-        <div class="my-courses">
-          <h3>Мої курси</h3>
-          <div v-if="myCourses.length" class="courses-grid">
-            <CourseCard v-for="course in myCourses" :key="course.id" :course="course" />
+        <div v-if="!isLoading && !error">
+          <div v-if="isOwnProfile" class="my-courses">
+            <h3>Мої курси</h3>
+            <div v-if="enrolledCourses.length" class="courses-grid">
+              <CourseCard v-for="course in enrolledCourses" :key="course.id" :course="course" />
+            </div>
+            <p v-else>Ви ще не зареєструвались ні на один курс</p>
           </div>
-          <p v-else>Ви ще не зареєструвались ні на один курс</p>
+
+          <div class="created-courses">
+            <h3>{{ isOwnProfile ? 'Створені мною курси' : 'Курси, створені користувачем' }}</h3>
+            <div v-if="createdCourses.length" class="courses-grid">
+              <CourseCard v-for="course in createdCourses" :key="course.id" :course="course" />
+            </div>
+            <p v-else>
+              {{
+                isOwnProfile
+                  ? 'Ви ще не створили жодного курсу'
+                  : 'Користувач ще не створив жодного курсу'
+              }}
+            </p>
+          </div>
         </div>
       </div>
     </div>
 
     <ProfileEditModal
+      v-if="isOwnProfile"
       :show="showEditModal"
       :userData="profileStore"
       :userAvatar="displayAvatar"
@@ -59,10 +86,11 @@ import CourseCard from '../components/CourseCard.vue'
 import ProfileEditModal from '../components/ProfileEditModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
+import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import profileAvatarSvg from '@/assets/svg/profile-avatar.svg'
 
 export default {
-  name: 'UserCabinetPage',
+  name: 'UserProfilePage',
   components: {
     BaseHeader,
     BaseFooter,
@@ -71,9 +99,13 @@ export default {
   },
   data() {
     return {
-      myCourses: [],
+      enrolledCourses: [],
+      createdCourses: [],
       defaultAvatar: profileAvatarSvg,
       showEditModal: false,
+      isLoading: true,
+      error: null,
+      userData: null,
     }
   },
   computed: {
@@ -83,11 +115,95 @@ export default {
     profileStore() {
       return useProfileStore()
     },
+    isOwnProfile() {
+      return (
+        !this.$route.params.userId ||
+        (this.authStore.user && this.$route.params.userId === this.authStore.user.uid)
+      )
+    },
+    userId() {
+      return this.isOwnProfile ? this.authStore.user?.uid : this.$route.params.userId
+    },
+    userName() {
+      return this.isOwnProfile
+        ? this.profileStore.userName
+        : this.userData?.username || 'Користувач'
+    },
+    userEmail() {
+      return this.isOwnProfile ? this.profileStore.userEmail : ''
+    },
+    userFullName() {
+      return this.isOwnProfile
+        ? this.profileStore.userFullName
+        : this.userData?.profile?.fullName || ''
+    },
+    userBio() {
+      return this.isOwnProfile ? this.profileStore.userBio : this.userData?.profile?.bio || ''
+    },
+    userAvatar() {
+      return this.isOwnProfile
+        ? this.profileStore.userAvatar
+        : this.userData?.profile?.avatarUrl || ''
+    },
     displayAvatar() {
-      return this.profileStore.userAvatar || this.defaultAvatar
+      return this.userAvatar || this.defaultAvatar
+    },
+  },
+  created() {
+    this.loadProfile()
+  },
+  watch: {
+    '$route.params.userId'() {
+      this.loadProfile()
     },
   },
   methods: {
+    async loadProfile() {
+      this.isLoading = true
+      this.error = null
+
+      try {
+        if (this.isOwnProfile) {
+          if (this.authStore.user) {
+            await Promise.all([
+              this.loadEnrolledCourses(this.authStore.user.uid),
+              this.loadCreatedCourses(this.authStore.user.uid),
+            ])
+          }
+        } else {
+          const userId = this.$route.params.userId
+          const db = getFirestore()
+          const userDoc = await getDoc(doc(db, 'users', userId))
+
+          if (!userDoc.exists()) {
+            throw new Error('Користувача не знайдено')
+          }
+
+          this.userData = userDoc.data()
+          await this.loadCreatedCourses(userId)
+        }
+      } catch (error) {
+        console.error('Помилка при завантаженні профілю:', error)
+        this.error = `Не вдалося завантажити профіль: ${error.message}`
+      } finally {
+        this.isLoading = false
+      }
+    },
+
+    async loadEnrolledCourses(userId) {
+      if (!userId) return
+      // Код завантаження курсів на які зареєстрований користувач
+      this.enrolledCourses = []
+    },
+
+    async loadCreatedCourses(userId) {
+      if (!userId) return
+
+      // Код завантаження курсів які створив користувач
+
+      this.createdCourses = []
+    },
+
     async updateProfile(updateData) {
       try {
         await this.profileStore.updateUserProfile(this.authStore.user.uid, updateData)
@@ -104,11 +220,15 @@ export default {
 <style scoped>
 .user-cabinet {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background-color: #bbd3fc;
 }
 
 .cabinet-container {
+  flex: 1;
   max-width: 1200px;
+  width: 100%;
   margin: 2rem auto;
   padding: 2rem;
   background-color: white;
@@ -189,11 +309,13 @@ export default {
   color: #fff;
 }
 
-.my-courses {
+.my-courses,
+.created-courses {
   margin-bottom: 2rem;
 }
 
-.my-courses h3 {
+.my-courses h3,
+.created-courses h3 {
   text-align: center;
   margin-bottom: 1.5rem;
   font-size: 24px;
@@ -204,6 +326,52 @@ export default {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 1.5rem;
+}
+
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-code {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 1rem 0;
+}
+
+.error-description {
+  color: #666;
+  font-size: 16px;
+  line-height: 1.5;
+  margin-bottom: 2rem;
+}
+
+.home-button {
+  padding: 10px 20px;
+  background-color: transparent;
+  border: 1px solid #000;
+  border-radius: 25px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  text-decoration: none;
+  color: #000;
+  transition:
+    background-color 0.3s,
+    color 0.3s;
+}
+
+.home-button:hover {
+  background-color: #3b82f6;
+  color: #fff;
 }
 
 @media (max-width: 768px) {

@@ -14,6 +14,8 @@
               type="text"
               id="username"
               placeholder="Введіть новий логін"
+              minlength="3"
+              maxlength="20"
             />
           </div>
         </div>
@@ -47,6 +49,8 @@
               type="text"
               id="fullName"
               placeholder="Введіть ваше повне ім'я"
+              minlength="3"
+              maxlength="100"
             />
           </div>
         </div>
@@ -59,6 +63,7 @@
               id="bio"
               placeholder="Розкажіть щось про себе"
               rows="4"
+              maxlength="1000"
             ></textarea>
           </div>
         </div>

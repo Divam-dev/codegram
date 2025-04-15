@@ -17,6 +17,7 @@ const routes = [
   { path: '/register', component: RegisterPage, meta: { requiresGuest: true } },
   { path: '/reset-password', component: ResetPassword, meta: { requiresGuest: true } },
   { path: '/profile', component: UserProfilePage, meta: { requiresAuth: true } },
+  { path: '/user/:userId', component: UserProfilePage },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
