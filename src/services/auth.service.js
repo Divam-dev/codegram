@@ -102,6 +102,11 @@ export class AuthHelper {
 
       const finalUsername = username || email.split('@')[0]
 
+      let avatarUrl = ''
+      if (user.photoURL) {
+        avatarUrl = user.photoURL.split('=')[0]
+      }
+
       const userDoc = {
         userId: user.uid,
         email: email.toLowerCase(),
@@ -109,9 +114,10 @@ export class AuthHelper {
         normalizedUsername: finalUsername.toLowerCase(),
         role: 'user',
         authType: authType,
+        blocked: false,
         createdAt: new Date(),
         profile: {
-          avatarUrl: user.photoURL || '',
+          avatarUrl: avatarUrl,
           bio: '',
         },
       }
