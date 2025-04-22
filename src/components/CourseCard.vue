@@ -1,32 +1,48 @@
 <template>
-  <div class="course-card">
-    <img
-      :src="course.image || 'https://i.ibb.co/nq4bG4r/Icon.jpg'"
-      :alt="course.title"
-      class="course-image"
-    />
-    <div class="course-content">
-      <h3 class="course-title">{{ course.title }}</h3>
-      <div class="course-footer">
-        <p class="course-available">{{ formatAvailability(course.availableFrom) }}</p>
-        <div class="course-stats">
-          <span class="students">
-            <img src="@/assets/svg/user.svg" alt="User icon" class="icon" />
-            {{ course.students || 0 }}
-          </span>
-          <span class="rating">
-            <img src="@/assets/svg/star.svg" alt="Star icon" class="icon" />
-            {{ course.rating || 0 }}
-          </span>
-        </div>
-        <div class="course-author">
-          <img :src="authorAvatar" :alt="authorName" class="author-icon" />
-          <span :class="['author-badge', course.courseType]">
-            {{ authorName }}
-          </span>
+  <div class="course-card-container">
+    <router-link :to="`/courses/${course.id}`" class="card-link">
+      <div class="course-card">
+        <img
+          :src="course.image || 'https://i.ibb.co/nq4bG4r/Icon.jpg'"
+          :alt="course.title"
+          class="course-image"
+        />
+        <div class="course-content">
+          <h3 class="course-title">{{ course.title }}</h3>
+          <div class="course-footer">
+            <p class="course-available">{{ formatAvailability(course.availableFrom) }}</p>
+            <div class="course-stats">
+              <span class="students">
+                <img src="@/assets/svg/user.svg" alt="User icon" class="icon" />
+                {{ course.students || 0 }}
+              </span>
+              <span class="rating">
+                <img src="@/assets/svg/star.svg" alt="Star icon" class="icon" />
+                {{ course.rating || 0 }}
+              </span>
+            </div>
+            <div class="course-author" @click.stop>
+              <router-link
+                v-if="course.authorId"
+                :to="`/user/${course.authorId}`"
+                class="author-link"
+              >
+                <img :src="authorAvatar" :alt="authorName" class="author-icon" />
+                <span :class="['author-badge', course.courseType]">
+                  {{ authorName }}
+                </span>
+              </router-link>
+              <template v-else>
+                <img :src="authorAvatar" :alt="authorName" class="author-icon" />
+                <span :class="['author-badge', course.courseType]">
+                  {{ authorName }}
+                </span>
+              </template>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </router-link>
   </div>
 </template>
 
@@ -57,22 +73,26 @@ export default {
       ) {
         return this.course.author.profile.avatarUrl
       }
-      if (!this.course.courseType) {
-        return this.defaultAuthorSvg
+      if (this.course.courseType === 'codegram') {
+        return this.codegramLogoSvg
       }
-      return this.course.courseType === 'codegram' ? this.codegramLogoSvg : this.defaultAuthorSvg
+
+      return this.defaultAuthorSvg
     },
     authorName() {
       if (this.course.author && this.course.author.username) {
         return this.course.author.username
       }
-      return this.formatCourseType(this.course.courseType)
+      if (this.course.courseType === 'codegram') {
+        return 'Codegram'
+      }
+      return 'Автора не знайдено'
     },
   },
   methods: {
     formatCourseType(type) {
       if (type === 'codegram') return 'Codegram'
-      if (type === 'expert') return 'Експерт'
+      if (type === 'user') return 'Користувач'
       return 'Автора не знайдено'
     },
     formatAvailability(availability) {
@@ -85,6 +105,17 @@ export default {
 </script>
 
 <style scoped>
+.course-card-container {
+  height: 100%;
+}
+
+.card-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  height: 100%;
+}
+
 .course-card {
   background: white;
   border-radius: 1rem;
@@ -103,7 +134,7 @@ export default {
 
 .course-image {
   width: 100%;
-  height: 160px;
+  height: 150px;
   object-fit: cover;
 }
 
@@ -157,6 +188,21 @@ export default {
   gap: 0.5rem;
 }
 
+.author-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  transition: background-color 0.2s;
+}
+
+.author-link:hover {
+  background-color: #f3f4f6;
+}
+
 .author-icon {
   width: 20px;
   height: 20px;
@@ -171,10 +217,6 @@ export default {
 }
 
 .author-badge.codegram {
-  color: #ff8c00;
-}
-
-.author-badge.expert {
   color: #3b82f6;
 }
 </style>

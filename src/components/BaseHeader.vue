@@ -264,7 +264,6 @@ export default {
   transform: scale(0.95);
 }
 
-/* Адаптація для мобільних */
 @media (max-width: 768px) {
   .header-links,
   .auth-buttons,

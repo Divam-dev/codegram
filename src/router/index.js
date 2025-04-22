@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../views/HomePage.vue'
 import CoursesPage from '../views/CoursesPage.vue'
+import CourseDetailPage from '../views/CourseDetailPage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import UserProfilePage from '../views/UserProfilePage.vue'
@@ -13,6 +14,7 @@ export const isRouteLoading = ref(false)
 const routes = [
   { path: '/', component: HomePage },
   { path: '/courses', component: CoursesPage },
+  { path: '/courses/:courseId', component: CourseDetailPage },
   { path: '/login', component: LoginPage, meta: { requiresGuest: true } },
   { path: '/register', component: RegisterPage, meta: { requiresGuest: true } },
   { path: '/reset-password', component: ResetPassword, meta: { requiresGuest: true } },

@@ -55,7 +55,7 @@ export function useCourses() {
     ],
     courseType: [
       { id: 'codegram', label: 'Розробка Codegram', checked: false },
-      { id: 'expert', label: 'Користувацький', checked: false },
+      { id: 'user', label: 'Користувацький', checked: false },
     ],
     difficulty: [
       { id: 'beginner', label: 'Початковий (beginner)', checked: false },
@@ -177,7 +177,7 @@ export function useCourses() {
     // Course type filter
     if (activeFilters.courseType.length > 0) {
       filteredCourses = filteredCourses.filter((course) => {
-        if (course.courseType === 'user' && activeFilters.courseType.includes('expert')) {
+        if (course.courseType === 'user' && activeFilters.courseType.includes('user')) {
           return true
         }
         return activeFilters.courseType.includes(course.courseType)
