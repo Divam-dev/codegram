@@ -1,7 +1,11 @@
 <template>
   <aside class="filter-sidebar">
-    <h2 class="filter-title">Фільтри</h2>
+    <div class="filter-header">
+      <h2 class="filter-title">Фільтри</h2>
+      <button class="clear-filters-btn" @click="clearAllFilters">Очистити фільтри</button>
+    </div>
 
+    <!-- Теми -->
     <div class="filter-section">
       <h3 class="section-title">Теми</h3>
       <div class="filter-options">
@@ -17,6 +21,23 @@
       </div>
     </div>
 
+    <!-- Технології -->
+    <div class="filter-section">
+      <h3 class="section-title">Технології</h3>
+      <div class="filter-options">
+        <label v-for="tech in filters.technologies" :key="tech.id" class="filter-option">
+          <input
+            type="checkbox"
+            :value="tech.id"
+            v-model="tech.checked"
+            @change="handleFilterChange"
+          />
+          <span>{{ tech.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Тип курсу -->
     <div class="filter-section">
       <h3 class="section-title">Тип курсу</h3>
       <div class="filter-options">
@@ -32,6 +53,23 @@
       </div>
     </div>
 
+    <!-- Рівень складності -->
+    <div class="filter-section">
+      <h3 class="section-title">Рівень складності</h3>
+      <div class="filter-options">
+        <label v-for="level in filters.difficulty" :key="level.id" class="filter-option">
+          <input
+            type="checkbox"
+            :value="level.id"
+            v-model="level.checked"
+            @change="handleFilterChange"
+          />
+          <span>{{ level.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Рейтинг -->
     <div class="filter-section">
       <h3 class="section-title">Рейтинг</h3>
       <div class="filter-options">
@@ -39,10 +77,74 @@
           <input
             type="radio"
             :value="rating.id"
-            v-model="$parent.selectedRating"
-            @change="handleFilterChange"
+            v-model="localSelectedRating"
+            @change="handleRatingChange"
           />
           <span>{{ rating.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Тривалість -->
+    <div class="filter-section">
+      <h3 class="section-title">Тривалість</h3>
+      <div class="filter-options">
+        <label v-for="duration in filters.duration" :key="duration.id" class="filter-option">
+          <input
+            type="checkbox"
+            :value="duration.id"
+            v-model="duration.checked"
+            @change="handleFilterChange"
+          />
+          <span>{{ duration.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Наявність сертифікату -->
+    <div class="filter-section">
+      <h3 class="section-title">Наявність сертифікату</h3>
+      <div class="filter-options">
+        <label v-for="cert in filters.certificate" :key="cert.id" class="filter-option">
+          <input
+            type="checkbox"
+            :value="cert.id"
+            v-model="cert.checked"
+            @change="handleFilterChange"
+          />
+          <span>{{ cert.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Мова -->
+    <div class="filter-section">
+      <h3 class="section-title">Мова</h3>
+      <div class="filter-options">
+        <label v-for="lang in filters.language" :key="lang.id" class="filter-option">
+          <input
+            type="checkbox"
+            :value="lang.id"
+            v-model="lang.checked"
+            @change="handleFilterChange"
+          />
+          <span>{{ lang.label }}</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Доступність -->
+    <div class="filter-section">
+      <h3 class="section-title">Доступність</h3>
+      <div class="filter-options">
+        <label v-for="avail in filters.availability" :key="avail.id" class="filter-option">
+          <input
+            type="checkbox"
+            :value="avail.id"
+            v-model="avail.checked"
+            @change="handleFilterChange"
+          />
+          <span>{{ avail.label }}</span>
         </label>
       </div>
     </div>
@@ -58,9 +160,35 @@ export default {
       required: true,
     },
   },
+  data() {
+    return {
+      localSelectedRating: null,
+    }
+  },
   methods: {
     handleFilterChange() {
       this.$emit('filter-change', this.filters)
+    },
+    handleRatingChange() {
+      this.$emit('rating-change', this.localSelectedRating)
+    },
+    clearAllFilters() {
+      Object.keys(this.filters).forEach((category) => {
+        if (Array.isArray(this.filters[category])) {
+          this.filters[category].forEach((item) => {
+            if ('checked' in item) {
+              item.checked = false
+            }
+          })
+        }
+      })
+
+      this.localSelectedRating = null
+
+      this.$emit('filter-change', this.filters)
+      this.$emit('rating-change', null)
+
+      this.$emit('clear-filters')
     },
   },
 }
@@ -73,12 +201,36 @@ export default {
   padding: 1.5rem;
   border-radius: 0.5rem;
   height: fit-content;
+  overflow-y: auto;
+}
+
+.filter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+  flex-direction: column;
 }
 
 .filter-title {
   font-size: 1.25rem;
   font-weight: bold;
-  margin-bottom: 1.5rem;
+  margin: 0;
+}
+
+.clear-filters-btn {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  transition: all 0.2s;
+}
+
+.clear-filters-btn:hover {
+  background-color: #eff6ff;
+  text-decoration: underline;
 }
 
 .filter-section {
@@ -88,13 +240,14 @@ export default {
 .section-title {
   font-size: 1rem;
   font-weight: 600;
-  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
 }
 
 .filter-options {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.25rem;
 }
 
 .filter-option {
@@ -104,7 +257,8 @@ export default {
   cursor: pointer;
 }
 
-.filter-option input[type='checkbox'] {
+.filter-option input[type='checkbox'],
+.filter-option input[type='radio'] {
   width: 1rem;
   height: 1rem;
 }
@@ -112,6 +266,17 @@ export default {
 @media (max-width: 768px) {
   .filter-sidebar {
     width: 100%;
+    max-height: none;
+  }
+
+  .filter-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .clear-filters-btn {
+    align-self: flex-end;
   }
 }
 </style>

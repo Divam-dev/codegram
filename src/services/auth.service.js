@@ -1,4 +1,13 @@
-import { getFirestore, collection, query, where, getDocs, setDoc, doc } from 'firebase/firestore'
+import {
+  getFirestore,
+  collection,
+  query,
+  where,
+  getDocs,
+  setDoc,
+  doc,
+  limit,
+} from 'firebase/firestore'
 import {
   getAuth,
   createUserWithEmailAndPassword,
@@ -24,8 +33,9 @@ export class AuthHelper {
     }
 
     try {
+      const normalizedEmail = email.toLowerCase()
       const usersRef = collection(this.db, 'users')
-      const q = query(usersRef, where('email', '==', email.toLowerCase()))
+      const q = query(usersRef, where('email', '==', normalizedEmail), limit(1))
       const querySnapshot = await getDocs(q)
 
       if (!querySnapshot.empty) {
@@ -54,14 +64,12 @@ export class AuthHelper {
 
     try {
       const usersRef = collection(this.db, 'users')
-      const querySnapshot = await getDocs(usersRef)
 
-      const usernameExists = querySnapshot.docs.some((doc) => {
-        const userData = doc.data()
-        return userData.username && userData.username.toLowerCase() === username.toLowerCase()
-      })
+      const normalizedUsername = username.toLowerCase()
+      const q = query(usersRef, where('normalizedUsername', '==', normalizedUsername), limit(1))
+      const querySnapshot = await getDocs(q)
 
-      return usernameExists
+      return !querySnapshot.empty
     } catch (error) {
       console.error('Error checking username:', error)
       throw new Error(`Помилка перевірки логіна: ${error.message}`)
@@ -92,15 +100,24 @@ export class AuthHelper {
         throw new Error("Email є обов'язковим для створення профілю")
       }
 
+      const finalUsername = username || email.split('@')[0]
+
+      let avatarUrl = ''
+      if (user.photoURL) {
+        avatarUrl = user.photoURL.split('=')[0]
+      }
+
       const userDoc = {
         userId: user.uid,
         email: email.toLowerCase(),
-        username: username || email.split('@')[0],
+        username: finalUsername,
+        normalizedUsername: finalUsername.toLowerCase(),
         role: 'user',
         authType: authType,
+        blocked: false,
         createdAt: new Date(),
         profile: {
-          avatarUrl: user.photoURL || '',
+          avatarUrl: avatarUrl,
           bio: '',
         },
       }
@@ -119,9 +136,9 @@ export class AuthHelper {
   // Register a new user with email and password
   async registerWithEmail(email, password, username) {
     try {
-      const { exists, authType } = await this.checkEmailExists(email)
+      const { exists: emailExists, authType } = await this.checkEmailExists(email)
 
-      if (exists) {
+      if (emailExists) {
         if (authType === 'email') {
           throw new Error('Користувач з такою електронною поштою вже існує')
         }
@@ -223,7 +240,6 @@ export class AuthHelper {
       temporaryUser = result.user
 
       const email = this.getUserEmail(result.user)
-      console.log('Retrieved email:', email)
 
       const { exists, authType } = await this.checkEmailExists(email)
 

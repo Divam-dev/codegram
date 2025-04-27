@@ -10,15 +10,32 @@
         </div>
       </div>
       <div class="container">
-        <div class="content-layout">
-          <FilterSidebar :filters="filters" @filter-change="handleFilterChange" />
+        <div v-if="loading" class="loading-state">
+          <p>Завантаження курсів...</p>
+        </div>
+        <div v-else-if="error" class="error-state">
+          <p>{{ error }}</p>
+          <button @click="fetchCourses" class="retry-button">Спробувати знову</button>
+        </div>
+        <div v-else class="content-layout">
+          <FilterSidebar
+            :filters="filters"
+            @filter-change="handleFilterChange"
+            @rating-change="handleRatingChange"
+            @clear-filters="handleClearFilters"
+          />
 
           <div class="courses-section">
             <div class="courses-header">
+              <p class="courses-count">Знайдено курсів: {{ courses.length }}</p>
               <SortDropdown :options="sortOptions" @sort-change="handleSortChange" />
             </div>
 
-            <div class="courses-grid">
+            <div v-if="courses.length === 0" class="no-courses">
+              <p>Курсів не знайдено. Спробуйте змінити фільтри пошуку.</p>
+            </div>
+
+            <div v-else class="courses-grid">
               <CourseCard v-for="course in courses" :key="course.id" :course="course" />
             </div>
           </div>
@@ -36,6 +53,7 @@ import SearchBar from '../components/SearchBar.vue'
 import FilterSidebar from '../components/FilterSidebar.vue'
 import SortDropdown from '../components/SortDropdown.vue'
 import CourseCard from '../components/CourseCard.vue'
+import { useCourses } from '../composables/useCourses'
 
 export default {
   name: 'CoursesPage',
@@ -47,125 +65,37 @@ export default {
     SortDropdown,
     CourseCard,
   },
-  data() {
+  setup() {
+    const {
+      courses,
+      loading,
+      error,
+      filters,
+      sortOptions,
+      fetchCourses,
+      handleSearch,
+      handleFilterChange,
+      handleRatingChange,
+      handleClearFilters,
+      handleSortChange,
+    } = useCourses()
+
+    // Initial data fetch
+    fetchCourses()
+
     return {
-      allCourses: [
-        {
-          id: 1,
-          title: 'Основи програмування C#',
-          availableFrom: '10.01.2025',
-          students: 100,
-          rating: 4.5,
-          type: 'C# для початківців',
-          author: 'Codegram',
-          image: 'https://i.ibb.co/gPV3fq8/C.jpg',
-          topics: ['programming'],
-          courseType: ['codegram'],
-        },
-        {
-          id: 2,
-          title: 'Основи програмування JavaScript',
-          availableFrom: 'постійно',
-          students: 228,
-          rating: 3.9,
-          type: 'JavaScript',
-          author: 'Divam',
-          image: 'https://i.ibb.co/brrtCtR/JS.jpg',
-          topics: ['programming'],
-          courseType: ['expert'],
-        },
-        {
-          id: 3,
-          title: 'Основи Java',
-          availableFrom: '15.02.2025',
-          students: 0,
-          rating: 0,
-          type: 'Java',
-          author: 'Codegram',
-          image: 'https://i.ibb.co/x12hvjk/Java.jpg',
-          topics: ['programming', 'project-management'],
-          courseType: ['codegram'],
-        },
-      ],
-      courses: [],
-      filters: {
-        topics: [
-          { id: 'programming', label: 'Програмування', checked: false },
-          { id: 'design', label: 'Дизайн', checked: false },
-          { id: 'marketing', label: 'Маркетинг', checked: false },
-          { id: 'project-management', label: 'Управління проектами', checked: false },
-        ],
-        courseType: [
-          { id: 'codegram', label: 'Розробка Codegram', checked: false },
-          { id: 'expert', label: 'Розроблений експертами', checked: false },
-        ],
-        rating: [
-          { id: 'rating-5', label: 'Від 5 зірок' },
-          { id: 'rating-4', label: 'Від 4 зірок' },
-          { id: 'rating-3', label: 'Від 3 зірок' },
-        ],
-      },
-      sortOptions: [
-        { value: 'newest', label: 'Найновіші' },
-        { value: 'popular', label: 'Найпопулярніші' },
-        { value: 'rating', label: 'За рейтингом' },
-      ],
-      selectedRating: null,
+      courses,
+      loading,
+      error,
+      filters,
+      sortOptions,
+      fetchCourses,
+      handleSearch,
+      handleFilterChange,
+      handleRatingChange,
+      handleClearFilters,
+      handleSortChange,
     }
-  },
-  created() {
-    this.courses = this.allCourses
-  },
-  methods: {
-    handleSearch(searchTerm) {
-      if (!searchTerm) {
-        this.courses = this.allCourses
-      } else {
-        this.courses = this.allCourses.filter((course) =>
-          course.title.toLowerCase().includes(searchTerm.toLowerCase()),
-        )
-      }
-    },
-    handleFilterChange(filters) {
-      let filteredCourses = [...this.allCourses]
-
-      const selectedTopics = filters.topics
-        .filter((topic) => topic.checked)
-        .map((topic) => topic.id)
-      if (selectedTopics.length > 0) {
-        filteredCourses = filteredCourses.filter((course) =>
-          selectedTopics.some((topic) => course.topics.includes(topic)),
-        )
-      }
-
-      const selectedCourseTypes = filters.courseType
-        .filter((type) => type.checked)
-        .map((type) => type.id)
-      if (selectedCourseTypes.length > 0) {
-        filteredCourses = filteredCourses.filter((course) =>
-          selectedCourseTypes.some((type) => course.courseType.includes(type)),
-        )
-      }
-
-      const selectedRating = filters.rating.find((rating) => rating.id === this.selectedRating)
-      if (selectedRating) {
-        const minRating = parseInt(selectedRating.id.split('-')[1], 10)
-        filteredCourses = filteredCourses.filter((course) => course.rating >= minRating)
-      }
-
-      this.courses = filteredCourses
-    },
-    handleSortChange(sortOption) {
-      const sortMethods = {
-        newest: (a, b) => new Date(b.availableFrom) - new Date(a.availableFrom),
-        popular: (a, b) => b.students - a.students,
-        rating: (a, b) => b.rating - a.rating,
-      }
-
-      if (sortMethods[sortOption]) {
-        this.courses = [...this.courses].sort(sortMethods[sortOption])
-      }
-    },
   },
 }
 </script>
@@ -181,8 +111,9 @@ export default {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
+  padding: 0 1rem;
   padding-top: 2em;
 }
 
@@ -214,8 +145,14 @@ export default {
 
 .courses-header {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
+}
+
+.courses-count {
+  font-size: 0.9rem;
+  color: #6b7280;
 }
 
 .courses-grid {
@@ -224,13 +161,41 @@ export default {
   gap: 1.5rem;
 }
 
+.loading-state,
+.error-state,
+.no-courses {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+}
+
+.retry-button {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.retry-button:hover {
+  background-color: #2563eb;
+}
+
 @media (max-width: 768px) {
   .content-layout {
     flex-direction: column;
   }
 
-  .main-content {
-    padding: 1rem;
+  .courses-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
   }
 }
 </style>

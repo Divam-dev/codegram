@@ -82,6 +82,7 @@ import BaseHeader from '../components/BaseHeader.vue'
 import BaseFooter from '../components/BaseFooter.vue'
 import { useAuthStore } from '../stores/auth'
 import { AuthHelper } from '../services/auth.service'
+import { useProfileStore } from '../stores/profile'
 
 export default {
   name: 'RegisterPage',
@@ -101,7 +102,8 @@ export default {
   },
   setup() {
     const authStore = useAuthStore()
-    return { authStore }
+    const profileStore = useProfileStore()
+    return { authStore, profileStore }
   },
   methods: {
     async Register(e) {
@@ -127,6 +129,13 @@ export default {
         this.errorMessage = ''
         const user = await this.authHelper.signInWithGoogle()
         this.authStore.setUser(user)
+        if (
+          !this.profileStore.profile ||
+          (user.photoURL && !this.profileStore.profile?.profile?.avatarUrl)
+        ) {
+          await this.profileStore.loadUserProfile(user.uid)
+        }
+
         this.$router.push('/profile')
       } catch (error) {
         this.errorMessage = `Помилка входу через Google: ${error.message}`

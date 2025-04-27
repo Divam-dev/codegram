@@ -173,7 +173,6 @@ export default {
   margin-top: 1rem;
 }
 
-/* Specific styles for each feature card */
 .feature-card.simple {
   background-color: #e8f1ff;
   border: 2px solid #0066ff;
