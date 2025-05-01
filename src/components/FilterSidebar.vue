@@ -101,22 +101,6 @@
       </div>
     </div>
 
-    <!-- Наявність сертифікату -->
-    <div class="filter-section">
-      <h3 class="section-title">Наявність сертифікату</h3>
-      <div class="filter-options">
-        <label v-for="cert in filters.certificate" :key="cert.id" class="filter-option">
-          <input
-            type="checkbox"
-            :value="cert.id"
-            v-model="cert.checked"
-            @change="handleFilterChange"
-          />
-          <span>{{ cert.label }}</span>
-        </label>
-      </div>
-    </div>
-
     <!-- Мова -->
     <div class="filter-section">
       <h3 class="section-title">Мова</h3>

@@ -52,8 +52,6 @@ export const useEnrollmentsStore = defineStore('enrollments', () => {
               lastModuleId: enrollment.lastModuleId,
               lastLessonId: enrollment.lastLessonId,
               completed: enrollment.completed || false,
-              certificateIssued: enrollment.certificateIssued || false,
-              certificateUrl: enrollment.certificateUrl,
               continueLink:
                 enrollment.lastModuleId && enrollment.lastLessonId
                   ? `/courses/${courseId}/modules/${enrollment.lastModuleId}/lessons/${enrollment.lastLessonId}`
@@ -196,6 +194,7 @@ export const useEnrollmentsStore = defineStore('enrollments', () => {
       error.value = `Помилка при оновленні останнього переглянутого уроку: ${err.message}`
     }
   }
+
   function getCourseProgress(courseId) {
     const course = enrolledCourses.value.find((c) => c.id === courseId)
     return course ? course.progress : 0

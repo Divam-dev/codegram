@@ -17,7 +17,6 @@ export function useCourses() {
     difficulty: [],
     rating: null,
     duration: [],
-    certificate: [],
     language: [],
     availability: [],
   })
@@ -72,10 +71,6 @@ export function useCourses() {
       { id: 'duration-5', label: 'До 5 годин', checked: false },
       { id: 'duration-10', label: 'До 10 годин', checked: false },
       { id: 'duration-10plus', label: '10+ годин', checked: false },
-    ],
-    certificate: [
-      { id: 'with-certificate', label: 'З сертифікатом', checked: false },
-      { id: 'without-certificate', label: 'Без сертифікату', checked: false },
     ],
     language: [
       { id: 'ukrainian', label: 'Українська 🇺🇦', checked: false },
@@ -222,19 +217,6 @@ export function useCourses() {
           if (durationFilter === 'duration-10plus') return hours > 10
           return false
         })
-      })
-    }
-
-    // Certificate filter
-    if (activeFilters.certificate.length > 0) {
-      filteredCourses = filteredCourses.filter((course) => {
-        if (activeFilters.certificate.includes('with-certificate') && course.hasCertificate) {
-          return true
-        }
-        if (activeFilters.certificate.includes('without-certificate') && !course.hasCertificate) {
-          return true
-        }
-        return false
       })
     }
 

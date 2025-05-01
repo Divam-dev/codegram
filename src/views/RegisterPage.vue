@@ -59,13 +59,6 @@
           </div>
         </div>
 
-        <div class="options">
-          <label>
-            <input v-model="termsAgreed" type="checkbox" />
-            Погоджуюся з <router-link to="/rules">правилами</router-link>
-          </label>
-        </div>
-
         <button type="submit" class="register-button">Зареєструватися</button>
 
         <p class="register-link">
@@ -95,7 +88,6 @@ export default {
       name: '',
       email: '',
       password: '',
-      termsAgreed: false,
       errorMessage: '',
       authHelper: new AuthHelper(),
     }
@@ -109,11 +101,6 @@ export default {
     async Register(e) {
       e.preventDefault()
       this.errorMessage = ''
-
-      if (!this.termsAgreed) {
-        this.errorMessage = 'Будь ласка, погодьтеся з правилами'
-        return
-      }
 
       try {
         const user = await this.authHelper.registerWithEmail(this.email, this.password, this.name)
@@ -264,30 +251,6 @@ export default {
 
 .input-wrapper:focus-within {
   border-bottom-color: #000;
-}
-
-.options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  font-size: 14px;
-}
-
-.options a {
-  color: #0066cc;
-  text-decoration: none;
-}
-
-.options a:hover {
-  text-decoration: underline;
-}
-
-.options label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  gap: 0.3rem;
 }
 
 .register-button {

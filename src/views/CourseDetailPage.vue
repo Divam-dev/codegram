@@ -14,12 +14,6 @@
           <div class="notification-content">
             <h2>Вітаємо з успішним завершенням курсу!</h2>
             <p>Ви успішно пройшли фінальний тест і завершили курс "{{ course.title }}".</p>
-            <div v-if="enrollment && enrollment.certificateUrl" class="certificate-link">
-              <p>Ваш сертифікат доступний за посиланням:</p>
-              <a :href="enrollment.certificateUrl" target="_blank" class="certificate-button">
-                Отримати сертифікат
-              </a>
-            </div>
           </div>
         </div>
 
@@ -97,10 +91,6 @@
                 <span class="meta-label">ТРИВАЛІСТЬ</span>
                 <span class="meta-value">{{ course.duration }}+ год</span>
               </div>
-              <div v-if="course.hasCertificate" class="meta-item certificate">
-                <span class="meta-label">СЕРТИФІКАТ</span>
-                <span class="meta-value">По завершенню курсу</span>
-              </div>
             </div>
           </div>
         </div>
@@ -175,32 +165,6 @@
                   </div>
                 </div>
               </transition>
-            </div>
-
-            <!-- Відображення секції фінального тесту -->
-            <div v-if="isEnrolled && hasFinalQuiz" class="final-quiz-section">
-              <div class="final-quiz-header">
-                <h3>Фінальний тест</h3>
-                <span v-if="isFinalQuizCompleted" class="quiz-status completed">Пройдено</span>
-                <span v-else class="quiz-status pending">Не пройдено</span>
-              </div>
-              <p class="final-quiz-description">
-                Фінальний тест допоможе вам перевірити знання, отримані під час проходження курсу.
-                Для успішного завершення курсу необхідно набрати не менше 60% правильних відповідей.
-              </p>
-
-              <div class="final-quiz-actions">
-                <button
-                  v-if="canTakeFinalQuiz"
-                  @click="navigateToFinalQuiz"
-                  class="take-quiz-button"
-                >
-                  {{ isFinalQuizAttempted ? 'Перепройти фінальний тест' : 'Пройти фінальний тест' }}
-                </button>
-                <p v-else class="quiz-not-available">
-                  Для доступу до фінального тесту необхідно спочатку пройти всі уроки курсу.
-                </p>
-              </div>
             </div>
 
             <button
@@ -311,15 +275,6 @@ const {
   formatLevel,
 } = useCourseDetail(courseId)
 
-// Перевіряємо, чи може користувач проходити фінальний тест
-const canTakeFinalQuiz = computed(() => {
-  if (!isEnrolled.value) return false
-
-  const allLessonsCompleted = checkAllLessonsCompleted()
-
-  return allLessonsCompleted
-})
-
 // Обчислювані властивості
 const enrollButtonText = computed(() => {
   if (!isAvailable.value) return 'Курс ще недоступний'
@@ -407,27 +362,6 @@ async function checkFinalQuizStatus() {
   }
 }
 
-function checkAllLessonsCompleted() {
-  if (!isEnrolled.value) return false
-
-  // Отримуємо всі уроки з усіх модулів
-  let totalLessons = 0
-  let completedLessons = 0
-
-  Object.keys(moduleLessons.value).forEach((moduleId) => {
-    const lessons = moduleLessons.value[moduleId] || []
-    totalLessons += lessons.length
-
-    lessons.forEach((lesson) => {
-      if (enrollmentsStore.isLessonCompleted(moduleId, lesson.id)) {
-        completedLessons++
-      }
-    })
-  })
-
-  return totalLessons > 0 && completedLessons === totalLessons
-}
-
 // Записуємо користувача на курс
 async function enrollCourse() {
   if (!authStore.isAuthenticated) {
@@ -460,24 +394,6 @@ async function enrollCourse() {
   } catch (error) {
     console.error('Помилка при записі на курс:', error)
     alert(`Помилка при записі на курс: ${error.message}`)
-  }
-}
-
-function navigateToFinalQuiz() {
-  if (!isEnrolled.value) return
-
-  if (
-    sortedModules.value.length > 0 &&
-    moduleLessons.value[sortedModules.value[0].id] &&
-    moduleLessons.value[sortedModules.value[0].id].length > 0
-  ) {
-    const firstModule = sortedModules.value[0]
-    const firstLesson = moduleLessons.value[firstModule.id][0]
-
-    router.push({
-      path: `/courses/${courseId}/modules/${firstModule.id}/lessons/${firstLesson.id}`,
-      query: { showFinalQuiz: 'true' },
-    })
   }
 }
 
@@ -529,26 +445,6 @@ watch(
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-}
-
-.certificate-link {
-  margin-top: 1rem;
-}
-
-.certificate-button {
-  display: inline-block;
-  background-color: #10b981;
-  color: white;
-  padding: 0.75rem 1.5rem;
-  border-radius: 40px;
-  text-decoration: none;
-  font-weight: 600;
-  margin-top: 0.5rem;
-  transition: background-color 0.3s;
-}
-
-.certificate-button:hover {
-  background-color: #059669;
 }
 
 .loading-state,
@@ -890,60 +786,6 @@ watch(
   border-top: 1px solid #e5e7eb;
 }
 
-.final-quiz-section {
-  margin-top: 2rem;
-  padding: 1.5rem;
-  background-color: #f0f9ff;
-  border: 1px solid #bae6fd;
-  border-radius: 0.5rem;
-}
-
-.final-quiz-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.final-quiz-header h3 {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0;
-}
-
-.quiz-status {
-  padding: 0.25rem 0.75rem;
-  border-radius: 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-}
-
-.quiz-status.completed {
-  background-color: #dcfce7;
-  color: #166534;
-}
-
-.quiz-status.pending {
-  background-color: #fee2e2;
-  color: #991b1b;
-}
-
-.final-quiz-description {
-  margin-bottom: 1.5rem;
-  color: #1e40af;
-}
-
-.final-quiz-actions {
-  display: flex;
-  justify-content: center;
-}
-
-.quiz-not-available {
-  color: #6b7280;
-  font-style: italic;
-  text-align: center;
-}
-
 .expand-enter-active,
 .expand-leave-active {
   transition:
@@ -1103,16 +945,6 @@ watch(
 
   .course-stats {
     flex-wrap: wrap;
-  }
-
-  .final-quiz-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .quiz-status {
-    align-self: flex-start;
   }
 }
 </style>

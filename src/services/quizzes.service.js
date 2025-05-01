@@ -134,8 +134,6 @@ export class QuizzesService {
           id: enrollmentId,
           completed: false,
           finalScore: 0,
-          certificateIssued: false,
-          certificateUrl: null,
         }
       }
 
@@ -145,22 +143,12 @@ export class QuizzesService {
         completed: passed,
         finalScore: finalQuizResult.score,
         completedAt: passed ? serverTimestamp() : null,
-        certificateIssued: passed && enrollmentDoc.data().hasCertificate ? true : false,
-        certificateUrl:
-          passed && enrollmentDoc.data().hasCertificate
-            ? `https://codegram.app/certificates/${enrollmentId}`
-            : null,
       })
 
       return {
         id: enrollmentId,
         completed: passed,
         finalScore: finalQuizResult.score,
-        certificateIssued: passed && enrollmentDoc.data().hasCertificate,
-        certificateUrl:
-          passed && enrollmentDoc.data().hasCertificate
-            ? `https://codegram.app/certificates/${enrollmentId}`
-            : null,
       }
     } catch (error) {
       console.error('Error updating course completion status:', error)

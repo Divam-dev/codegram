@@ -114,7 +114,6 @@ export class AuthHelper {
         normalizedUsername: finalUsername.toLowerCase(),
         role: 'user',
         authType: authType,
-        blocked: false,
         createdAt: new Date(),
         profile: {
           avatarUrl: avatarUrl,

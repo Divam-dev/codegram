@@ -85,8 +85,6 @@ export class EnrollmentsService {
         enrolledAt: serverTimestamp(),
         progress: 0,
         completed: false,
-        certificateIssued: false,
-        certificateUrl: null,
       }
 
       const enrollmentsRef = collection(this.db, 'enrollments')
