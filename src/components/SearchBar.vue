@@ -7,7 +7,6 @@
       @input="handleInput"
       class="search-input"
     />
-    <button @click="handleSearch" class="search-button">Пошук</button>
   </div>
 </template>
 
@@ -44,19 +43,5 @@ export default {
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   font-size: 1rem;
-}
-
-.search-button {
-  padding: 0.75rem 2rem;
-  background-color: #fbb468;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  cursor: pointer;
-  font-weight: 500;
-}
-
-.search-button:hover {
-  background-color: #e5a14d;
 }
 </style>

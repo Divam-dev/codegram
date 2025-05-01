@@ -86,7 +86,7 @@ import CourseCard from '../components/CourseCard.vue'
 import ProfileEditModal from '../components/ProfileEditModal.vue'
 import { useAuthStore } from '../stores/auth'
 import { useProfileStore } from '../stores/profile'
-import { getFirestore, doc, getDoc } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, collection, getDocs, query, where } from 'firebase/firestore'
 import profileAvatarSvg from '@/assets/svg/profile-avatar.svg'
 
 export default {
@@ -190,10 +190,86 @@ export default {
       }
     },
 
+    // Завантаження курсів, на які записаний користувач
     async loadEnrolledCourses(userId) {
       if (!userId) return
-      // Код завантаження курсів на які зареєстрований користувач
-      this.enrolledCourses = []
+
+      try {
+        const db = getFirestore()
+
+        const enrollmentsRef = collection(db, 'enrollments')
+        const q = query(enrollmentsRef, where('userId', '==', userId))
+        const enrollmentsSnapshot = await getDocs(q)
+
+        if (enrollmentsSnapshot.empty) {
+          this.enrolledCourses = []
+          return
+        }
+
+        const enrollments = []
+        enrollmentsSnapshot.forEach((doc) => {
+          enrollments.push({
+            id: doc.id,
+            ...doc.data(),
+          })
+        })
+
+        // Отримуємо дані кожного курсу
+        const coursePromises = enrollments.map(async (enrollment) => {
+          try {
+            const courseRef = doc(db, 'courses', enrollment.courseId)
+            const courseDoc = await getDoc(courseRef)
+
+            if (courseDoc.exists()) {
+              const courseData = courseDoc.data()
+              let authorData = null
+
+              if (courseData.authorId) {
+                try {
+                  const authorRef = doc(db, 'users', courseData.authorId)
+                  const authorDoc = await getDoc(authorRef)
+
+                  if (authorDoc.exists()) {
+                    authorData = authorDoc.data()
+                  }
+                } catch (authorError) {
+                  console.error(
+                    `Помилка при отриманні автора для курсу ${courseDoc.id}:`,
+                    authorError,
+                  )
+                }
+              }
+
+              return {
+                id: courseDoc.id,
+                ...courseData,
+                author: authorData,
+                enrollmentId: enrollment.id,
+                progress: enrollment.progress || 0,
+                lastModuleId: enrollment.lastModuleId,
+                lastLessonId: enrollment.lastLessonId,
+                completed: enrollment.completed || false,
+                certificateIssued: enrollment.certificateIssued || false,
+                certificateUrl: enrollment.certificateUrl,
+                continueLink:
+                  enrollment.lastModuleId && enrollment.lastLessonId
+                    ? `/courses/${courseDoc.id}/modules/${enrollment.lastModuleId}/lessons/${enrollment.lastLessonId}`
+                    : `/courses/${courseDoc.id}`,
+              }
+            }
+            return null
+          } catch (error) {
+            console.error(`Помилка при отриманні курсу ${enrollment.courseId}:`, error)
+            return null
+          }
+        })
+
+        const courses = await Promise.all(coursePromises)
+        this.enrolledCourses = courses.filter((course) => course !== null)
+      } catch (error) {
+        console.error('Помилка при завантаженні курсів користувача:', error)
+        this.error = `Не вдалося завантажити курси: ${error.message}`
+      }
     },
 
     async loadCreatedCourses(userId) {

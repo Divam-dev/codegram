@@ -2,10 +2,12 @@ import { createRouter, createWebHistory } from 'vue-router'
 import HomePage from '../views/HomePage.vue'
 import CoursesPage from '../views/CoursesPage.vue'
 import CourseDetailPage from '../views/CourseDetailPage.vue'
+import LessonPage from '../views/LessonPage.vue'
 import LoginPage from '../views/LoginPage.vue'
 import RegisterPage from '../views/RegisterPage.vue'
 import UserProfilePage from '../views/UserProfilePage.vue'
 import { useAuthStore } from '../stores/auth'
+import { useEnrollmentsStore } from '../stores/enrollments'
 import ResetPassword from '@/views/ResetPassword.vue'
 import { ref } from 'vue'
 
@@ -15,6 +17,28 @@ const routes = [
   { path: '/', component: HomePage },
   { path: '/courses', component: CoursesPage },
   { path: '/courses/:courseId', component: CourseDetailPage },
+  {
+    path: '/courses/:courseId/modules/:moduleId/lessons/:lessonId',
+    component: LessonPage,
+    meta: { requiresAuth: true },
+    beforeEnter: async (to, from, next) => {
+      const enrollmentsStore = useEnrollmentsStore()
+      const authStore = useAuthStore()
+
+      if (!authStore.isAuthenticated) {
+        next('/login')
+        return
+      }
+
+      const { isEnrolled } = await enrollmentsStore.checkEnrollment(to.params.courseId)
+      if (!isEnrolled) {
+        next(`/courses/${to.params.courseId}`)
+        return
+      }
+
+      next()
+    },
+  },
   { path: '/login', component: LoginPage, meta: { requiresGuest: true } },
   { path: '/register', component: RegisterPage, meta: { requiresGuest: true } },
   { path: '/reset-password', component: ResetPassword, meta: { requiresGuest: true } },

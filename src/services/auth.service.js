@@ -125,7 +125,6 @@ export class AuthHelper {
       const userRef = doc(this.db, 'users', user.uid)
       await setDoc(userRef, userDoc)
 
-      console.log('Successfully created user record')
       return userDoc
     } catch (error) {
       console.error('Error in createUserRecord:', error)
@@ -232,7 +231,6 @@ export class AuthHelper {
     let temporaryUser = null
 
     try {
-      console.log('Starting Google sign in process')
       const provider = new GoogleAuthProvider()
       provider.addScope('email')
 

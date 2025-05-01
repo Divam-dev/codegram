@@ -102,4 +102,29 @@ export class CoursesService {
       return null
     }
   }
+  async getCourseById(courseId) {
+    try {
+      const courseRef = doc(this.db, 'courses', courseId)
+      const courseDoc = await getDoc(courseRef)
+
+      if (courseDoc.exists()) {
+        const courseData = {
+          id: courseDoc.id,
+          ...courseDoc.data(),
+        }
+
+        // Отримуємо дані автора
+        if (courseData.authorId) {
+          courseData.author = await this.getAuthorById(courseData.authorId)
+        }
+
+        return courseData
+      }
+
+      return null
+    } catch (error) {
+      console.error(`Error fetching course with ID ${courseId}:`, error)
+      throw new Error(`Помилка при отриманні курсу: ${error.message}`)
+    }
+  }
 }
