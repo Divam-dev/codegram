@@ -1,4 +1,13 @@
-import { getFirestore, collection, getDocs, doc, getDoc } from 'firebase/firestore'
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  query,
+  where,
+  addDoc,
+} from 'firebase/firestore'
 
 export class CoursesService {
   constructor() {
@@ -8,8 +17,10 @@ export class CoursesService {
 
   async getAllCourses() {
     try {
+      // Модифікуємо запит, щоб отримувати тільки схвалені курси
       const coursesRef = collection(this.db, 'courses')
-      const querySnapshot = await getDocs(coursesRef)
+      const approvedCoursesQuery = query(coursesRef, where('status', '==', 'approved'))
+      const querySnapshot = await getDocs(approvedCoursesQuery)
 
       const courses = []
       querySnapshot.forEach((doc) => {
@@ -102,6 +113,7 @@ export class CoursesService {
       return null
     }
   }
+
   async getCourseById(courseId) {
     try {
       const courseRef = doc(this.db, 'courses', courseId)
@@ -112,7 +124,6 @@ export class CoursesService {
           id: courseDoc.id,
           ...courseDoc.data(),
         }
-
         // Отримуємо дані автора
         if (courseData.authorId) {
           courseData.author = await this.getAuthorById(courseData.authorId)
@@ -125,6 +136,66 @@ export class CoursesService {
     } catch (error) {
       console.error(`Error fetching course with ID ${courseId}:`, error)
       throw new Error(`Помилка при отриманні курсу: ${error.message}`)
+    }
+  }
+
+  // Метод для отримання курсів, створених конкретним користувачем
+  async getCoursesByAuthor(authorId) {
+    try {
+      const coursesRef = collection(this.db, 'courses')
+      const q = query(coursesRef, where('authorId', '==', authorId))
+      const querySnapshot = await getDocs(q)
+
+      const courses = []
+      querySnapshot.forEach((doc) => {
+        courses.push({
+          id: doc.id,
+          ...doc.data(),
+        })
+      })
+
+      return courses
+    } catch (error) {
+      console.error(`Error fetching courses by author ${authorId}:`, error)
+      throw new Error(`Помилка при отриманні курсів автора: ${error.message}`)
+    }
+  }
+
+  // Створення нового курсу
+  async createCourse(courseData) {
+    try {
+      const coursesRef = collection(this.db, 'courses')
+      const docRef = await addDoc(coursesRef, courseData)
+
+      return {
+        id: docRef.id,
+        ...courseData,
+      }
+    } catch (error) {
+      console.error('Error creating course:', error)
+      throw new Error(`Помилка при створенні курсу: ${error.message}`)
+    }
+  }
+
+  // Метод для отримання курсів, що очікують на перевірку (для адмін-панелі)
+  async getPendingCourses() {
+    try {
+      const coursesRef = collection(this.db, 'courses')
+      const q = query(coursesRef, where('status', '==', 'pending'))
+      const querySnapshot = await getDocs(q)
+
+      const courses = []
+      querySnapshot.forEach((doc) => {
+        courses.push({
+          id: doc.id,
+          ...doc.data(),
+        })
+      })
+
+      return courses
+    } catch (error) {
+      console.error('Error fetching pending courses:', error)
+      throw new Error(`Помилка при отриманні курсів на перевірці: ${error.message}`)
     }
   }
 }

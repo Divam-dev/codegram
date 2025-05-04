@@ -275,9 +275,96 @@ export default {
     async loadCreatedCourses(userId) {
       if (!userId) return
 
-      // Код завантаження курсів які створив користувач
+      try {
+        const db = getFirestore()
 
-      this.createdCourses = []
+        // Отримуємо всі курси, створені користувачем зі статусом 'approved'
+        const coursesRef = collection(db, 'courses')
+        const q = query(
+          coursesRef,
+          where('authorId', '==', userId),
+          where('status', '==', 'approved'),
+        )
+
+        const coursesSnapshot = await getDocs(q)
+
+        // Очищаємо масив перед заповненням
+        this.createdCourses = []
+
+        if (coursesSnapshot.empty) {
+          return
+        }
+
+        // Обробляємо кожен курс та додаємо додаткові дані
+        const createdCoursesPromises = []
+
+        coursesSnapshot.forEach((courseDoc) => {
+          const courseData = {
+            id: courseDoc.id,
+            ...courseDoc.data(),
+          }
+
+          // Додаємо дані про автора, якщо потрібно (в цьому випадку, автор - це
+          // користувач, чий профіль ми переглядаємо)
+          const promise = (async () => {
+            try {
+              // Якщо це власний профіль, додаємо дані з profileStore
+              if (this.isOwnProfile) {
+                return {
+                  ...courseData,
+                  author: {
+                    username: this.profileStore.userName,
+                    profile: {
+                      avatarUrl: this.profileStore.userAvatar,
+                      bio: this.profileStore.userBio,
+                    },
+                  },
+                }
+              } else {
+                // Якщо це профіль іншого користувача, використовуємо userData
+                return {
+                  ...courseData,
+                  author: this.userData,
+                }
+              }
+            } catch (error) {
+              console.error(`Помилка при обробці курсу ${courseDoc.id}:`, error)
+              return courseData
+            }
+          })()
+
+          createdCoursesPromises.push(promise)
+        })
+
+        // Очікуємо завершення всіх операцій
+        this.createdCourses = await Promise.all(createdCoursesPromises)
+
+        // Сортуємо курси за датою створення (від найновіших)
+        this.createdCourses.sort((a, b) => {
+          const dateA = this.getTimestamp(a.createdAt)
+          const dateB = this.getTimestamp(b.createdAt)
+          return dateB - dateA
+        })
+      } catch (error) {
+        console.error('Помилка при завантаженні створених курсів:', error)
+      }
+    },
+
+    // Допоміжна функція для отримання timestamp з різних форматів дати
+    getTimestamp(dateField) {
+      if (!dateField) return 0
+
+      if (dateField._seconds) {
+        return dateField._seconds * 1000
+      } else if (dateField.seconds) {
+        return dateField.seconds * 1000
+      } else if (dateField.toDate) {
+        return dateField.toDate().getTime()
+      } else if (dateField instanceof Date) {
+        return dateField.getTime()
+      }
+
+      return 0
     },
 
     async updateProfile(updateData) {

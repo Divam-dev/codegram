@@ -25,7 +25,10 @@
             <div v-if="isProfileMenuOpen" class="profile-menu">
               <router-link to="/profile" class="menu-item">Профіль</router-link>
               <router-link to="/my-courses" class="menu-item">Мої курси</router-link>
-              <router-link to="/create-course" class="menu-item">Створити курс</router-link>
+              <router-link v-if="isAdmin || isModerator" to="/admin" class="menu-item admin-link">
+                Адмін-панель
+              </router-link>
+
               <button @click="logout" class="menu-item logout">Вийти</button>
             </div>
           </transition>
@@ -42,8 +45,19 @@
       <router-link to="/courses">Курси</router-link>
       <router-link to="/about">Про проект</router-link>
       <router-link to="/faq">Поширені питання</router-link>
-      <button class="btn-login" @click="goToLogin">Увійти</button>
-      <button class="btn-signup" @click="goToRegister">Приєднатися</button>
+
+      <template v-if="authStore.isAuthenticated">
+        <router-link to="/profile">Профіль</router-link>
+        <router-link to="/my-courses">Мої курси</router-link>
+
+        <router-link v-if="isAdmin || isModerator" to="/admin">Адмін-панель</router-link>
+
+        <button class="mobile-logout" @click="logout">Вийти</button>
+      </template>
+      <template v-else>
+        <button class="btn-login" @click="goToLogin">Увійти</button>
+        <button class="btn-signup" @click="goToRegister">Приєднатися</button>
+      </template>
     </div>
   </header>
 </template>
@@ -72,6 +86,15 @@ export default {
     },
     displayAvatar() {
       return this.profileStore.userAvatar || this.defaultAvatar
+    },
+    userRole() {
+      return this.profileStore.profile?.role || 'user'
+    },
+    isAdmin() {
+      return this.userRole === 'admin'
+    },
+    isModerator() {
+      return this.userRole === 'moderator'
     },
   },
   methods: {
@@ -277,21 +300,22 @@ export default {
     background: transparent;
     margin-top: 0;
   }
-
   .menu-item {
     padding: 0.5rem 1rem;
   }
-
   .logout {
     border-top: none;
     margin-top: 0;
   }
-}
-
-@media (max-width: 768px) {
-  .header-links,
-  .auth-buttons {
-    display: none;
+  .mobile-logout {
+    color: #ef4444;
+    background: none;
+    border: none;
+    padding: 0.75rem 0;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
+    font-size: 1rem;
   }
 
   .mobile-menu-btn {
@@ -300,7 +324,6 @@ export default {
     border: none;
     cursor: pointer;
   }
-
   .mobile-menu-btn span {
     display: block;
     width: 25px;
@@ -308,7 +331,6 @@ export default {
     background: #333;
     margin: 5px 0;
   }
-
   .mobile-menu {
     display: none;
     flex-direction: column;
@@ -319,7 +341,6 @@ export default {
     padding: 1rem;
     gap: 1rem;
   }
-
   .mobile-menu a {
     text-decoration: none;
     color: #333;
