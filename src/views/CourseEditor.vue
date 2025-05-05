@@ -147,7 +147,7 @@
                 </div>
 
                 <div class="form-group">
-                  <label for="image">Зображення курсу *</label>
+                  <label for="image">Зображення курсу</label>
                   <div class="image-upload">
                     <div class="image-preview" v-if="imagePreview">
                       <img :src="imagePreview" alt="Preview" />
@@ -192,7 +192,7 @@
                 </div>
 
                 <div class="form-group">
-                  <label>Технології *</label>
+                  <label>Технології</label>
                   <div class="tags-container">
                     <div
                       v-for="tech in availableTechnologies"
@@ -332,17 +332,6 @@
                     required
                   />
                 </div>
-
-                <div class="form-group half-width">
-                  <label for="weight">Вага тесту</label>
-                  <input
-                    v-model.number="finalQuiz.weight"
-                    type="number"
-                    id="weight"
-                    placeholder="За замовчуванням: 1"
-                    min="1"
-                  />
-                </div>
               </div>
 
               <div class="quiz-questions">
@@ -407,13 +396,6 @@
             >
               {{ isSaving ? 'Відправка...' : 'Відправити на перевірку' }}
             </button>
-          </div>
-
-          <div class="validation-progress">
-            <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: `${validationProgress}%` }"></div>
-            </div>
-            <p class="progress-text">{{ validationProgress }}% заповнено</p>
           </div>
         </div>
       </div>
@@ -526,17 +508,6 @@
             <div class="input-hint">URL документа, який доступний для перегляду в iframe</div>
           </div>
 
-          <div class="form-group">
-            <label for="lessonDuration">Тривалість (хвилин)</label>
-            <input
-              v-model.number="lessonForm.duration"
-              type="number"
-              id="lessonDuration"
-              placeholder="Наприклад: 15"
-              min="1"
-            />
-          </div>
-
           <div class="modal-actions">
             <button class="cancel-btn" @click="closeLessonModal">Скасувати</button>
             <button
@@ -604,16 +575,6 @@
           <button v-if="questionForm.options.length < 6" @click="addOption" class="btn-add-option">
             + Додати варіант
           </button>
-
-          <div class="form-group">
-            <label for="questionExplanation">Пояснення (необов'язково)</label>
-            <textarea
-              v-model="questionForm.explanation"
-              id="questionExplanation"
-              placeholder="Пояснення, яке буде показане, якщо учень вибере неправильну відповідь"
-              rows="2"
-            ></textarea>
-          </div>
 
           <div class="modal-actions">
             <button class="cancel-btn" @click="closeQuestionModal">Скасувати</button>
@@ -725,7 +686,6 @@ export default {
       title: 'Фінальний тест',
       description: 'Тест для перевірки знань з усього курсу',
       passingScore: 60,
-      weight: 3,
       questions: [],
     })
 
@@ -773,9 +733,7 @@ export default {
         course.level &&
         course.language &&
         course.duration &&
-        course.image &&
-        course.topics.length > 0 &&
-        course.technologies.length > 0
+        course.topics.length > 0
 
       const hasModules = modules.length > 0
 
@@ -795,45 +753,6 @@ export default {
         questionForm.correctOptionIndex >= 0 &&
         questionForm.correctOptionIndex < questionForm.options.length
       )
-    })
-
-    const validationProgress = computed(() => {
-      let completed = 0
-      let total = 4
-
-      // Перевірка основних полів
-      if (
-        course.title &&
-        course.description &&
-        course.level &&
-        course.language &&
-        course.duration &&
-        course.image &&
-        course.topics.length > 0 &&
-        course.technologies.length > 0
-      ) {
-        completed++
-      }
-
-      // Перевірка модулів
-      if (modules.length > 0) {
-        completed++
-      }
-
-      // Перевірка лекцій
-      if (
-        modules.length > 0 &&
-        modules.every((module) => module.lessons && module.lessons.length > 0)
-      ) {
-        completed++
-      }
-
-      // Перевірка фінального тесту
-      if (finalQuiz.questions.length > 0) {
-        completed++
-      }
-
-      return Math.round((completed / total) * 100)
     })
 
     //Методи для курсу
@@ -957,7 +876,6 @@ export default {
           finalQuiz.title = quizData.title || 'Фінальний тест'
           finalQuiz.description = quizData.description || 'Тест для перевірки знань з усього курсу'
           finalQuiz.passingScore = quizData.passingScore || 60
-          finalQuiz.weight = quizData.weight || 3
           finalQuiz.questions = quizData.questions || []
         }
       } catch (err) {
@@ -1108,16 +1026,8 @@ export default {
         formErrors.duration = 'Тривалість повинна бути більше 0'
       }
 
-      if (!course.image) {
-        formErrors.image = "Зображення курсу обов'язкове"
-      }
-
       if (course.topics.length === 0) {
         formErrors.topics = 'Виберіть хоча б одну тему'
-      }
-
-      if (course.technologies.length === 0) {
-        formErrors.technologies = 'Виберіть хоча б одну технологію'
       }
     }
 
@@ -1283,10 +1193,6 @@ export default {
         newLesson.pdfUrl = lessonForm.pdfUrl
       }
 
-      if (lessonForm.duration) {
-        newLesson.duration = lessonForm.duration
-      }
-
       if (editingLessonIndex.value === null) {
         modules[moduleIndex].lessons.push(newLesson)
       } else {
@@ -1374,10 +1280,6 @@ export default {
         question: questionForm.question,
         options: [...questionForm.options],
         correctOptionIndex: questionForm.correctOptionIndex,
-      }
-
-      if (questionForm.explanation) {
-        newQuestion.explanation = questionForm.explanation
       }
 
       if (editingQuestionIndex.value === null) {
@@ -1521,7 +1423,6 @@ export default {
             title: finalQuiz.title,
             description: finalQuiz.description,
             passingScore: finalQuiz.passingScore,
-            weight: finalQuiz.weight,
             questions: finalQuiz.questions,
           }
 
@@ -1632,7 +1533,6 @@ export default {
       availableTopics,
       availableTechnologies,
       isFormValid,
-      validationProgress,
       imageInput,
       modules,
       expandedModules,
@@ -2164,7 +2064,7 @@ select:focus {
 .btn-delete-small {
   background-color: #ef4444;
   color: white;
-  width: 20px;
+  width: 60px;
   height: 20px;
   display: flex;
   align-items: center;
@@ -2509,29 +2409,6 @@ select:focus {
   padding: 1.5rem;
   border-top: 1px solid #e5e7eb;
   background-color: #f9fafb;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: #e5e7eb;
-  border-radius: 9999px;
-  overflow: hidden;
-  margin-bottom: 0.5rem;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #3b82f6;
-  border-radius: 9999px;
-  transition: width 0.3s ease;
-}
-
-.progress-text {
-  font-size: 0.75rem;
-  color: #6b7280;
-  margin: 0;
-  text-align: center;
 }
 
 @media (max-width: 768px) {

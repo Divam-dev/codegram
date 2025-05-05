@@ -11,6 +11,7 @@ import {
   updateDoc,
   deleteDoc,
   serverTimestamp,
+  runTransaction,
 } from 'firebase/firestore'
 
 export class EnrollmentsService {
@@ -90,6 +91,22 @@ export class EnrollmentsService {
       const enrollmentsRef = collection(this.db, 'enrollments')
       const docRef = await addDoc(enrollmentsRef, enrollmentData)
 
+      // Збільшуємо кількість студентів
+      const courseRef = doc(this.db, 'courses', courseId)
+      await runTransaction(this.db, async (transaction) => {
+        const courseDoc = await transaction.get(courseRef)
+        if (!courseDoc.exists()) {
+          throw "Course doesn't exist!"
+        }
+
+        const courseData = courseDoc.data()
+        const currentStudents = courseData.students || 0
+
+        transaction.update(courseRef, {
+          students: currentStudents + 1,
+        })
+      })
+
       return {
         id: docRef.id,
         ...enrollmentData,
@@ -160,9 +177,8 @@ export class EnrollmentsService {
 
       const lessonsRef = collection(this.db, `enrollments/${enrollmentId}/completedLessons`)
       const lessonRef = doc(lessonsRef, lessonId)
-      await updateDoc(lessonRef, lessonData).catch(async () => {
-        await setDoc(lessonRef, lessonData)
-      })
+
+      await setDoc(lessonRef, lessonData, { merge: true })
 
       await this.updateProgress(enrollmentId)
 
@@ -246,8 +262,6 @@ export class EnrollmentsService {
 
       // Розраховуємо прогрес
       const progress = totalLessons > 0 ? Math.round((completedItems / totalLessons) * 100) : 0
-
-      console.log(`Прогрес: ${completedItems} з ${totalLessons} (${progress}%)`)
 
       // Оновлюємо прогрес в записі
       const enrollmentRef = doc(this.db, 'enrollments', enrollmentId)

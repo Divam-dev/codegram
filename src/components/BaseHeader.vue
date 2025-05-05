@@ -6,7 +6,6 @@
         <router-link to="/">Головна</router-link>
         <router-link to="/courses">Курси</router-link>
         <router-link to="/about">Про проект</router-link>
-        <router-link to="/faq">Поширені питання</router-link>
       </div>
       <div v-if="!authStore.isAuthenticated" class="auth-buttons">
         <button class="btn-login" @click="goToLogin">Увійти</button>
@@ -44,7 +43,6 @@
       <router-link to="/">Головна</router-link>
       <router-link to="/courses">Курси</router-link>
       <router-link to="/about">Про проект</router-link>
-      <router-link to="/faq">Поширені питання</router-link>
 
       <template v-if="authStore.isAuthenticated">
         <router-link to="/profile">Профіль</router-link>

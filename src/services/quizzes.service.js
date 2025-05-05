@@ -33,7 +33,6 @@ export class QuizzesService {
       const courseDoc = await getDoc(courseRef)
 
       if (courseDoc.exists() && courseDoc.data().finalQuiz) {
-        console.log('Фінальний тест знайдено як поле в документі курсу')
         const quizData = courseDoc.data().finalQuiz
         return {
           id: 'embedded-final-quiz',

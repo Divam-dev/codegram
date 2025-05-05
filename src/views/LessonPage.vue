@@ -96,7 +96,6 @@
             :passing-score="finalQuiz.passingScore || 60"
             :module-id="'final'"
             :is-final-quiz="true"
-            :weight="finalQuiz.weight || 3"
             @quiz-submitted="handleQuizSubmitted"
             @quiz-retake="handleQuizRetake"
             @course-completed="completeCourse"
@@ -123,9 +122,6 @@
             </div>
             <div class="lesson-title-container">
               <h1 class="main-lesson-title">{{ currentLesson.title }}</h1>
-              <span class="lesson-duration" v-if="currentLesson.duration">
-                {{ currentLesson.duration }} хв
-              </span>
             </div>
           </div>
 
@@ -377,14 +373,11 @@ export default {
     // Завантаження всіх уроків
     const loadAllLessons = async () => {
       try {
-        console.log('Завантаження всіх уроків для правильного обчислення прогресу...')
         for (const module of modules.value) {
           if (!moduleLessons.value[module.id]) {
             await fetchLessonsForModule(module.id)
           }
         }
-
-        console.log('Всі уроки завантажено, перераховуємо прогрес')
       } catch (error) {
         console.error('Помилка при завантаженні всіх уроків:', error)
       }
@@ -506,8 +499,6 @@ export default {
           ...lessonDoc.data(),
         }
 
-        console.log('Завантажено урок:', currentLesson.value)
-
         return currentLesson.value
       } catch (error) {
         console.error('Помилка при завантаженні уроку:', error)
@@ -518,16 +509,13 @@ export default {
     // Завантаження фінального тесту
     const fetchFinalQuiz = async () => {
       try {
-        console.log('Fetching final quiz for course:', courseId.value)
         const quiz = await quizzesService.getFinalQuiz(courseId.value)
 
         if (quiz) {
-          console.log('Final quiz found in fetchFinalQuiz method:', quiz)
           finalQuiz.value = { ...quiz, isFinalQuiz: true }
 
           if (route.query.showFinalQuiz === 'true') {
             setTimeout(() => {
-              console.log('Showing final quiz from URL parameter')
               showFinalQuiz()
             }, 500)
           }
@@ -563,24 +551,8 @@ export default {
     }
 
     const markLessonAsCompleted = async () => {
-      console.log('Спроба позначити урок як виконаний:', moduleId.value, lessonId.value)
-
       try {
         await enrollmentsStore.completeLesson(moduleId.value, lessonId.value)
-
-        if (isLastLessonInCourse.value && finalQuiz.value && !courseCompleted.value) {
-          console.log('Останній урок виконаний, перевіряємо фінальний тест')
-
-          setTimeout(() => {
-            if (isLessonCompleted(moduleId.value, lessonId.value)) {
-              console.log('Урок підтверджено як виконаний, показуємо кнопку фінального тесту')
-            } else {
-              console.warn(
-                'Урок все ще не позначений як виконаний, можливо, потрібно натиснути кнопку ще раз',
-              )
-            }
-          }, 500)
-        }
       } catch (error) {
         console.error('Помилка при позначенні уроку як виконаного:', error)
         alert(`Помилка: ${error.message}`)
@@ -624,8 +596,6 @@ export default {
     }
 
     const showFinalQuiz = () => {
-      console.log('Спроба показати фінальний тест. Тест доступний:', !!finalQuiz.value)
-
       if (!finalQuiz.value) {
         console.error('Фінальний тест не знайдено, неможливо показати')
         alert('На жаль, фінальний тест не знайдено. Зверніться до адміністратора курсу.')
@@ -654,13 +624,11 @@ export default {
       try {
         if (!enrollment.value || !enrollment.value.id) return
 
-        console.log('Зберігаємо результат тесту:', quizResult)
         await quizzesService.saveQuizResult(enrollment.value.id, quizResult)
 
         await fetchQuizResults()
 
         if (quizResult.isFinalQuiz && quizResult.passed) {
-          console.log('Фінальний тест пройдено, оновлюємо статус курсу')
           await quizzesService.updateCourseCompletionStatus(enrollment.value.id)
 
           await enrollmentsStore.loadCurrentEnrollment(courseId.value)
@@ -674,15 +642,12 @@ export default {
       }
     }
 
-    const handleQuizRetake = async () => {
-      console.log('Повторне проходження фінального тесту')
-    }
+    const handleQuizRetake = async () => {}
 
     const completeCourse = async () => {
       try {
         if (!enrollment.value || !enrollment.value.id) return
 
-        console.log('Завершуємо курс')
         await quizzesService.updateCourseCompletionStatus(enrollment.value.id)
 
         await enrollmentsStore.loadCurrentEnrollment(courseId.value)
@@ -720,12 +685,7 @@ export default {
         [newModuleId, newLessonId, newShowFinalQuiz],
         [oldModuleId, oldLessonId, oldShowFinalQuiz],
       ) => {
-        console.log(
-          `Зміна параметрів URL: moduleId=${newModuleId}, lessonId=${newLessonId}, showFinalQuiz=${newShowFinalQuiz}`,
-        )
-
         if (newShowFinalQuiz === 'true' && oldShowFinalQuiz !== 'true' && finalQuiz.value) {
-          console.log('Показуємо фінальний тест через зміну URL параметра')
           setTimeout(() => {
             showFinalQuiz()
           }, 500)
@@ -840,10 +800,8 @@ export default {
   border-right: 1px solid #e5e7eb;
   overflow-y: auto;
   position: fixed;
-  height: calc(100vh - 60px);
   top: 60px;
   left: 0;
-  z-index: 100;
 }
 
 .course-title {
@@ -1080,15 +1038,6 @@ export default {
   font-weight: bold;
   margin: 0;
   margin-right: 1rem;
-}
-
-.lesson-duration {
-  padding: 0.25rem 0.75rem;
-  background-color: #e5e7eb;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  color: #4b5563;
-  margin-top: 0.5rem;
 }
 
 .lesson-content {

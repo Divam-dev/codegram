@@ -3,7 +3,7 @@
     <router-link :to="`/courses/${course.id}`" class="card-link">
       <div class="course-card">
         <img
-          :src="course.image || 'https://i.ibb.co/nq4bG4r/Icon.jpg'"
+          :src="course.image || 'https://placehold.co/1280x720'"
           :alt="course.title"
           class="course-image"
         />
@@ -15,10 +15,6 @@
               <span class="students">
                 <img src="@/assets/svg/user.svg" alt="User icon" class="icon" />
                 {{ course.students || 0 }}
-              </span>
-              <span class="rating">
-                <img src="@/assets/svg/star.svg" alt="Star icon" class="icon" />
-                {{ course.rating || 0 }}
               </span>
             </div>
             <div class="course-author" @click.stop>
@@ -170,8 +166,7 @@ export default {
   font-size: 0.875rem;
 }
 
-.students,
-.rating {
+.students {
   display: flex;
   align-items: center;
   gap: 0.25rem;

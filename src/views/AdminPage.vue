@@ -125,7 +125,7 @@ export default {
     const loading = ref(true)
     const error = ref(null)
     const pendingCourses = ref([])
-    const defaultCourseImage = 'https://i.ibb.co/nq4bG4r/Icon.jpg'
+    const defaultCourseImage = 'https://placehold.co/1280x720'
 
     const showRejectModal = ref(false)
     const selectedCourse = ref(null)

@@ -41,10 +41,6 @@
                       <img src="@/assets/svg/user.svg" alt="Students" class="meta-icon" />
                       {{ course.students || 0 }} учнів
                     </span>
-                    <span class="meta-item">
-                      <img src="@/assets/svg/star.svg" alt="Rating" class="meta-icon" />
-                      {{ course.rating || '0.0' }}
-                    </span>
                   </div>
                   <div class="course-actions">
                     <router-link :to="`/courses/${course.id}`" class="btn-view">
@@ -79,8 +75,8 @@
                     <span class="meta-item"> Створено: {{ formatDate(course.createdAt) }} </span>
                   </div>
                   <div class="course-actions">
-                    <router-link :to="`/create-course/preview/${course.id}`" class="btn-view">
-                      Переглянути
+                    <router-link :to="`/create-course/edit/${course.id}`" class="btn-edit">
+                      Редагувати
                     </router-link>
                   </div>
                 </div>
@@ -181,7 +177,7 @@ export default {
     const pendingCourses = ref([])
     const rejectedCourses = ref([])
     const draftCourses = ref([])
-    const defaultCourseImage = 'https://i.ibb.co/nq4bG4r/Icon.jpg'
+    const defaultCourseImage = 'https://placehold.co/1280x720'
 
     // Завантаження курсів користувача
     const fetchUserCourses = async () => {

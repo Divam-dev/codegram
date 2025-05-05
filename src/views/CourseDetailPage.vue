@@ -28,10 +28,6 @@
                 <span>{{ course.students || 0 }} учнів</span>
               </div>
               <div class="stat-item">
-                <img src="@/assets/svg/star.svg" alt="Star icon" class="icon" />
-                <span>{{ course.rating || 0 }}</span>
-              </div>
-              <div class="stat-item">
                 <span class="level-badge" :class="course.level">
                   {{ formatLevel(course.level) }}
                 </span>
@@ -76,7 +72,7 @@
           <div class="course-banner-wrapper">
             <div class="course-banner">
               <img
-                :src="course.image || 'https://i.ibb.co/nq4bG4r/Icon.jpg'"
+                :src="course.image || 'https://placehold.co/1280x720'"
                 :alt="course.title"
                 class="course-image"
               />

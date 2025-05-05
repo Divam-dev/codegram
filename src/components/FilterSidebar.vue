@@ -69,22 +69,6 @@
       </div>
     </div>
 
-    <!-- Рейтинг -->
-    <div class="filter-section">
-      <h3 class="section-title">Рейтинг</h3>
-      <div class="filter-options">
-        <label v-for="rating in filters.rating" :key="rating.id" class="filter-option">
-          <input
-            type="radio"
-            :value="rating.id"
-            v-model="localSelectedRating"
-            @change="handleRatingChange"
-          />
-          <span>{{ rating.label }}</span>
-        </label>
-      </div>
-    </div>
-
     <!-- Тривалість -->
     <div class="filter-section">
       <h3 class="section-title">Тривалість</h3>
@@ -144,17 +128,9 @@ export default {
       required: true,
     },
   },
-  data() {
-    return {
-      localSelectedRating: null,
-    }
-  },
   methods: {
     handleFilterChange() {
       this.$emit('filter-change', this.filters)
-    },
-    handleRatingChange() {
-      this.$emit('rating-change', this.localSelectedRating)
     },
     clearAllFilters() {
       Object.keys(this.filters).forEach((category) => {
@@ -167,10 +143,7 @@ export default {
         }
       })
 
-      this.localSelectedRating = null
-
       this.$emit('filter-change', this.filters)
-      this.$emit('rating-change', null)
 
       this.$emit('clear-filters')
     },

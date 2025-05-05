@@ -7,7 +7,6 @@ export function useCourses() {
   const loading = ref(true)
   const error = ref(null)
   const searchTerm = ref('')
-  const selectedRating = ref(null)
   const coursesService = new CoursesService()
 
   const activeFilters = reactive({
@@ -15,7 +14,6 @@ export function useCourses() {
     technologies: [],
     courseType: [],
     difficulty: [],
-    rating: null,
     duration: [],
     language: [],
     availability: [],
@@ -24,10 +22,9 @@ export function useCourses() {
   const sortOptions = [
     { value: 'newest', label: 'Найновіші' },
     { value: 'popular', label: 'Найпопулярніші' },
-    { value: 'rating', label: 'За рейтингом' },
   ]
 
-  const filters = {
+  const filters = reactive({
     topics: [
       { id: 'programming', label: 'Програмування', checked: false },
       { id: 'design', label: 'Дизайн', checked: false },
@@ -61,12 +58,6 @@ export function useCourses() {
       { id: 'intermediate', label: 'Середній (intermediate)', checked: false },
       { id: 'advanced', label: 'Просунутий (advanced)', checked: false },
     ],
-    rating: [
-      { id: 'rating-5', label: 'Від 5 зірок' },
-      { id: 'rating-4', label: 'Від 4 зірок' },
-      { id: 'rating-3', label: 'Від 3 зірок' },
-      { id: 'rating-0', label: 'Без рейтингу' },
-    ],
     duration: [
       { id: 'duration-5', label: 'До 5 годин', checked: false },
       { id: 'duration-10', label: 'До 10 годин', checked: false },
@@ -82,7 +73,7 @@ export function useCourses() {
       { id: 'coming-soon', label: 'Очікується скоро', checked: false },
       { id: 'always-available', label: 'Завжди доступний', checked: false },
     ],
-  }
+  })
 
   async function fetchCourses() {
     loading.value = true
@@ -112,17 +103,10 @@ export function useCourses() {
           .map((item) => item.id)
       }
     })
-
-    activeFilters.rating = selectedRating.value
     applyFilters()
   }
 
-  function handleRatingChange(rating) {
-    selectedRating.value = rating
-    activeFilters.rating = rating
-    applyFilters()
-  }
-
+  // Очищення всіх фільтрів
   function handleClearFilters() {
     searchTerm.value = ''
 
@@ -134,7 +118,15 @@ export function useCourses() {
       }
     })
 
-    selectedRating.value = null
+    Object.keys(filters).forEach((category) => {
+      if (Array.isArray(filters[category])) {
+        filters[category].forEach((item) => {
+          if ('checked' in item) {
+            item.checked = false
+          }
+        })
+      }
+    })
 
     applyFilters()
   }
@@ -184,21 +176,6 @@ export function useCourses() {
       filteredCourses = filteredCourses.filter((course) =>
         activeFilters.difficulty.includes(course.level),
       )
-    }
-
-    // Rating filter
-    if (activeFilters.rating) {
-      if (activeFilters.rating === 'rating-0') {
-        filteredCourses = filteredCourses.filter(
-          (course) => !course.rating || course.rating === '0' || course.rating === 0,
-        )
-      } else {
-        const minRating = parseInt(activeFilters.rating.split('-')[1], 10)
-        filteredCourses = filteredCourses.filter((course) => {
-          const ratingValue = parseFloat(course.rating)
-          return !isNaN(ratingValue) && ratingValue >= minRating
-        })
-      }
     }
 
     // Duration filter
@@ -307,7 +284,6 @@ export function useCourses() {
         return dateB - dateA
       },
       popular: (a, b) => (b.students || 0) - (a.students || 0),
-      rating: (a, b) => (b.rating || 0) - (a.rating || 0),
     }
 
     if (sortMethods[sortOption]) {
@@ -332,7 +308,6 @@ export function useCourses() {
     fetchCourses,
     handleSearch,
     handleFilterChange,
-    handleRatingChange,
     handleClearFilters,
     handleSortChange,
   }

@@ -45,10 +45,6 @@
         </div>
 
         <div class="options">
-          <label>
-            <input v-model="rememberMe" type="checkbox" />
-            Запам'ятати мене
-          </label>
           <router-link to="/reset-password">Забули пароль?</router-link>
         </div>
 

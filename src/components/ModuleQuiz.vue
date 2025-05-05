@@ -120,10 +120,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    weight: {
-      type: Number,
-      default: 1,
-    },
   },
   data() {
     return {
@@ -167,7 +163,6 @@ export default {
         passed: this.isPassed,
         answers: [...this.answers],
         isFinalQuiz: this.isFinalQuiz,
-        weight: this.weight,
       })
     },
     retakeQuiz() {

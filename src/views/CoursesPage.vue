@@ -21,7 +21,6 @@
           <FilterSidebar
             :filters="filters"
             @filter-change="handleFilterChange"
-            @rating-change="handleRatingChange"
             @clear-filters="handleClearFilters"
           />
 
@@ -75,12 +74,10 @@ export default {
       fetchCourses,
       handleSearch,
       handleFilterChange,
-      handleRatingChange,
       handleClearFilters,
       handleSortChange,
     } = useCourses()
 
-    // Initial data fetch
     fetchCourses()
 
     return {
@@ -92,7 +89,6 @@ export default {
       fetchCourses,
       handleSearch,
       handleFilterChange,
-      handleRatingChange,
       handleClearFilters,
       handleSortChange,
     }
